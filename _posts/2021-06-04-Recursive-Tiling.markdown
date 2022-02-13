@@ -2,7 +2,7 @@
 layout: post
 title:  Resursive Tiling
 date:   2021-06-04 15:01:35 +0300
-categories:   Resources
+categories:   Algorithm
 ---
 # Recursive Matrix Multiplication (C언어)
 
