@@ -1,0 +1,99 @@
+---
+layout: post
+title:  Data Structor - Queue
+date:   2021-05-27 00:51:28 +0300
+categories:   Data_Structor
+---
+
+# Queue - c
+**Queue**란 자료구조 중 하나로 처음으로 넣은 자료가 처음으로 나오는 ‘FIFO(First-in, First-out)’, 마지막에 넣은 자료가 마지막으로 나오는 ‘LILO(Last-in, Last-out)’형태를 갖는 자료구조로
+실생활에서 줄을 서거나 무언갈 기다리는 대기와 같다.
+
+***
+### 특징
+***
+자료구조 구현 자체는 쉬운편이며 알고리즘에 적용하는 것도 이전 포스팅 했던 스택자료구조에 비하면 쉬운 편이다.
+
+프로그래밍에서 대표적인 예를 들면 **Multi programing(하나 이상의 프로세스가 queue안에 존재)** 기능을 구현하는 과정에서 하나의 싱글코어는 여러 프로세스를 동시에 실행 할 수 없다. 따라서 하나의 프로세스가 실행 중이면 다른 프로세스들은 queue안에 들어가 자신의 순서를 기다리며 대기한다.
+
+
+<br>
+
+***
+### 기본 연산
+***
+* enqueue
+* dequeue
+* peek
+
+두 가지 기본기능을 갖고 자료 활용을 할 수 있으며 **enqueue**는 큐 안에 데이터를 집어 넣는 기능을, **dequeue**은 큐 에 들어있는 데이터(First-in)를 빼내는 기능을, **peek**은 큐안에 들어있는 데이터(First-in)를 꺼내지 않고 확인하는 기능을 갖는다.
+
+그 이외에 필요한 기능으로는
+* isEmpty
+* init
+
+등이 있으며 **isEmpty**는 큐가 비어있는지 확인하는 기능을, **init**은 큐를 초기화 해주는 기능을 갖는다.
+
+
+***
+### 구현
+***
+<br>
+
+#### 구조체 구현
+
+```c
+typedef struct _node{   // 링크드 리스트 형태로 구현
+    Data data;
+    struct _node *next;  // 이전 노드를 연결
+}Node;
+
+typedef struct _listQueue{
+    Node *front;  // Last-in Node
+    Node *rear;   // First-in Node
+}LlistQueue;
+```
+
+<br>
+
+#### 기본연산 함수 구현
+```c
+Data dequeue(Queue *queue){   // front 데이터 반환, 삭제
+    Node *delNode;
+    Data rdata;
+
+    if(isEmpty(queue)) {
+        printf("Queue memory error!");
+        return NULL;
+    }
+
+    delNode = queue->front;
+    rdata = delNode->data;
+    free(delNode);
+    return rdata;
+}
+
+void enqueue(Queue *queue, Data data){  // 데이터 삽입
+    Node *newNode = (Node*)malloc(sizeof(Node));
+
+    newNode->data = data;
+    newNode->next = NULL;
+
+    if(isEmpty(queue)){  // 첫 삽입의 경우
+        queue->front = newNode;
+        queue->rear = newNode;
+    }
+
+    queue->rear->next = newNode;  // 첫 삽입 아닌 경우
+    queue->rear = newNode;
+}
+
+Data peek(Queue *queue){  // 맨 위의 데이터 확인
+    if(isEmpty(queue)){
+        return (char)0;
+    }
+    return queue->front->data;
+}
+```
+
+큐 구조는 구현이 어렵지 않아 기본연산 **enqueue**, **dequeue**, **peek** 부분만 구현 했고 나머지 2개의 추가기능은 직접 구현해 보기로 하자.

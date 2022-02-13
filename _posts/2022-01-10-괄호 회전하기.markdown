@@ -1,0 +1,84 @@
+---
+layout: post
+title:  괄호 회전하기
+date:   2022-01-10 20:08:00 +0300
+categories:   Algorithm
+---
+
+# 프로그래머스 괄호 회전하기 (Stack, 그리디)
+
+이번 문제에서는 Stack 자료구조를 이용해 괄호가 완전한지 확인해야했고, 최적의 해룰 구하기 위한 방법 모색해야했다.
+(이번 풀이는 깔끔하지 못해서 다음에 코드 리뉴얼을 진행해야겠다.)
+
+<br>
+
+# 문제 설명
+
+문제 설명
+다음 규칙을 지키는 문자열을 올바른 괄호 문자열이라고 정의합니다.
+
+(), [], {} 는 모두 올바른 괄호 문자열입니다.
+만약 A가 올바른 괄호 문자열이라면, (A), [A], {A} 도 올바른 괄호 문자열입니다. 예를 들어, [] 가 올바른 괄호 문자열이므로, ([]) 도 올바른 괄호 문자열입니다.
+만약 A, B가 올바른 괄호 문자열이라면, AB 도 올바른 괄호 문자열입니다. 예를 들어, {} 와 ([]) 가 올바른 괄호 문자열이므로, {}([]) 도 올바른 괄호 문자열입니다.
+대괄호, 중괄호, 그리고 소괄호로 이루어진 문자열 s가 매개변수로 주어집니다. 이 s를 왼쪽으로 x (0 ≤ x < (s의 길이)) 칸만큼 회전시켰을 때 s가 올바른 괄호 문자열이 되게 하는 x의 개수를 return 하도록 solution 함수를 완성해주세요.
+
+출처: https://programmers.co.kr/learn/courses/30/lessons/76502#
+
+<br>
+
+# 풀이
+
+<br>
+
+```
+import java.util.*;
+
+class Solution {
+    fun solution(s: String): Int {
+        var answer: Int = 0
+        val list = ArrayList<Char>()
+        val stack = Stack<Char>()
+        val answerstack = Stack<Char>()
+        val q:Queue<Char> = LinkedList<Char>()
+        var tmp = s.toCharArray()
+        
+        for(c in tmp) {
+            q.add(c)
+            stack.add(c)
+        }
+        
+        var cnt = 0
+        var t = q.peek()
+        var last = stack.pop()
+        while(stack.size>=cnt){
+            
+            if( (t=='[' ||t=='{' || t=='(') && (last=='}' || last ==']' || last== ')')){
+                q.forEach{c->
+                    if(answerstack.size>0){
+                        var b = answerstack.peek()
+                        if((b=='['&& c ==']') || (b=='{'&& c =='}') || (b=='('&& c ==')')) {
+                            answerstack.pop()
+                            if(answerstack.size==0) answer++
+                        }else answerstack.add(c)
+                    }else answerstack.add(c)
+                    
+                }
+                if(answerstack.size==0){
+                    return answer
+                } else {
+                    answerstack.clear()
+                    answer = 0
+                }
+            }
+            
+            var a = q.poll()    
+                q.add(a)
+                cnt++
+                t = q.peek()
+                last = a
+        }
+        
+        return answer
+    }
+}
+```

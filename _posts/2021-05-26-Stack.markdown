@@ -1,0 +1,95 @@
+---
+layout: post
+title:  Data Structor - Stack
+date:   2021-05-26 23:22:47 +0300
+categories:   Data_Structor
+---
+
+# Stack - c
+**Stack**이란 자료구조 중 하나로 처음으로 넣은 자료가 마지막으로 나오는, 마지막에 넣은 자료가 처음으로 나오는 ‘LIFO(Last-in, First-out) 구조’를 갖는 자료구조로
+예를 들어 프링글스로 비유할 수 있다.
+
+<br>
+
+***
+### 특징
+***
+자료구조 구현 자체는 쉬우나 알고리즘에 스택을 적용하려면 고민을 많이 해야할 것 같다.
+예를 들어 웹 브라우징을 하다가 앞으로가기 또는 뒤로가기 버튼을 실행할 때 스택 구조를 활용한다.
+가장 오래전에 방문했던 페이지의 주소가 가장 아래에 놓이게 되고 가장 최근에 방문했던 페이지가 위에 위치해 뒤로가기 버튼을 누르면 'Last-in'의 주소 값으로 향하게 된다.
+
+
+<br>
+
+***
+### 기본 연산
+***
+* push
+* pop
+* peek
+
+세 가지 기본기능을 갖고 자료 활용을 할 수 있으며 **push**는 스택 안에 데이터를 집어 넣는 기능을, **pop**은 스택 맨 위에 올라와있는(가장 늦게 삽입한) 데이터를 빼내는 기능을, **peek**은 맨 위의 데이터를 빼내지 않고 확인하는 기능을 갖는다.
+
+그 이외에 필요한 기능으로는
+* isEmpty
+* init
+
+등이 있으며 **isEmpty**는 스택이 비어있는지 확인하는 기능을, **init**은 스택을 초기화 해주는 기능을 갖는다.
+
+<br>
+
+***
+### 구현
+***
+<br>
+
+#### 구조체 구현
+
+```c
+typedef struct _node{   // 링크드 리스트 형태로 구현
+    Data data;
+    struct _node *next;  // 밑에 있는 노드를 연결
+}Node;
+
+typedef struct _listStack{
+    Node *head;  // 맨 위에 있는 노드를 참조
+}ListStack;
+```
+
+<br>
+
+#### 기본연산 함수 구현
+```c
+Data SPop(Stack *pstack){   // 가장 위의 노드의 데이터를 반환하며 삭제
+    Data rdata;
+    Node *rnode;
+
+    if(SIsEmpty(pstack)){
+        return (char)0;
+    }
+
+    rdata = pstack->head->data;
+    rnode = pstack->head;
+    pstack->head = pstack->head->next;
+    free(rnode);
+    return rdata;
+}
+
+void SPush(Stack *pstack, Data data){  // 데이터를 가장 위에 삽입
+    Node *newNode = (Node*)malloc(sizeof(Node));
+
+    newNode->data = data;
+    newNode->next = pstack->head;
+
+    pstack->head = newNode;
+}
+
+Data SPeek(Stack *pstack){  // 맨 위의 데이터 확인
+    if(SIsEmpty(pstack)){
+        return (char)0;
+    }
+    return pstack->head->data;
+}
+```
+
+스택 구조는 구현이 어렵지 않아 기본연산 **pop**, **push**, **peek**의 구현코드만 담았고 나머지 2개의 추가기능은 직접 구현해 보기로 하자.

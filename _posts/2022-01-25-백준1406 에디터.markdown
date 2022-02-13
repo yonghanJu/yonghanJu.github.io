@@ -1,0 +1,65 @@
+---
+layout: post
+title:  에티터 - BOJ_1406(Kotlin)
+date:   2022-01-25 17:23:00 +0300
+categories:   Algorithm
+---
+
+# 에티터 - BOJ_1406(LinkedList, ListIterator, Kotlin)
+
+<br>
+
+이번 문제는 __LinkedList__ 와 __ListIterator__ 을 활용해서 에디터를 구현하는 문제이다.
+
+출처: https://www.acmicpc.net/problem/1406
+
+<br>
+
+### 배운 점
+
+처음에는 문제에서 요구하는 커서 기능을 구현하기 위해서 cursor의 위치를 int형으로 저장하고 사용했다.
+
+하지만 위 방식처럼 풀게되면 __LinkedList__ 의 삽입, 삭제, 추가 등 동작의 시간복잡도 __O(1)__ 장점을 살리지 못하게 되며 시간초과가 발생.
+
+(작업을 위한 위치로 이동해야하기 때문에 __O(n)__ 시간복잡도를 갖게 됨)
+
+따라서 아래와 같이 __ListIterator__ 객체를 생성하여 위 구현하면 문제가 해결된다.
+
+``` kotlin
+import java.io.*
+import java.util.*
+
+fun main() = with(BufferedReader(InputStreamReader(System.`in`))) {
+    val bw = BufferedWriter(OutputStreamWriter(System.`out`))
+
+    val str= readLine()
+    val n = readLine().toInt()
+    val list = LinkedList(str.toCharArray().asList())
+
+    val it = list.listIterator() // list.iterator() 와 다름 주의!!!
+
+    while(it.hasNext()) it.next()
+
+    for(i in 0 until n){
+        val s = readLine()
+        when(s[0]){
+            'L' -> if(it.hasPrevious()) it.previous()
+            'D' -> if(it.hasNext()) it.next()
+            'B' -> {
+                if(it.hasPrevious()) {
+                    it.previous()
+                    it.remove()
+                }
+            }
+            'P' -> {
+                it.add(s[2])
+            }
+        }
+    }
+
+    list.forEach { bw.append(it) }
+
+    bw.flush()
+    bw.close()
+}
+```

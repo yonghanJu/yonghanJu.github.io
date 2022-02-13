@@ -1,0 +1,127 @@
+---
+layout: post
+title:  Programers 단어변환
+date:   2021-06-25 13:28:46 +0300
+categories:   Algorithm
+---
+# Programers 단어변환- java
+
+<br>
+
+### 문제 설명
+---
+문제 설명
+두 개의 단어 begin, target과 단어의 집합 words가 있습니다. 아래와 같은 규칙을 이용하여 begin에서 target으로 변환하는 가장 짧은 변환 과정을 찾으려고 합니다.
+
+1. 한 번에 한 개의 알파벳만 바꿀 수 있습니다.
+
+2. words에 있는 단어로만 변환할 수 있습니다.
+예를 들어 begin이 "hit", target가 "cog", words가 ["hot","dot","dog","lot","log","cog"]라면 "hit" -> "hot" -> "dot" -> "dog" -> "cog"와 같이 4단계를 거쳐 변환할 수 있습니다.
+
+두 개의 단어 begin, target과 단어의 집합 words가 매개변수로 주어질 때, 최소 몇 단계의 과정을 거쳐 begin을 target으로 변환할 수 있는지 return 하도록 solution 함수를 작성해주세요.
+
+제한사항
+각 단어는 알파벳 소문자로만 이루어져 있습니다.
+각 단어의 길이는 3 이상 10 이하이며 모든 단어의 길이는 같습니다.
+words에는 3개 이상 50개 이하의 단어가 있으며 중복되는 단어는 없습니다.
+begin과 target은 같지 않습니다.
+변환할 수 없는 경우에는 0를 return 합니다.
+
+
+|begin|	target|	words|	return|
+|------|--------|--------|----------|
+|"hit"|	"cog"|	["hot", "dot", "dog", "lot", "log", "cog"]|	4|
+|"hit"|	"cog"|	["hot", "dot", "dog", "lot", "log"]	|0|
+
+
+입출력 예 설명
+예제 #1
+문제에 나온 예와 같습니다.
+
+예제 #2
+target인 "cog"는 words 안에 없기 때문에 변환할 수 없습니다.
+
+출처 : https://programmers.co.kr/learn/courses/30/lessons/43163
+
+
+<br>
+
+
+
+수정수정수정수정수정수정
+---
+### 풀이 과정
+
+1. dfs를 활용해 한 tree 형식으로 뻗어나가 target을 찾는 방법을 생각해 보았다.
+
+2. **일반적인 dfs탐색의 경우** 한번 탐색한 노드에 대해 visited 배열에 true를 입력하고 **다시 방문하지 않는다.**
+
+3. 하지만 이번 문제 해결을 위한 dfs에서는 한 번 방문한 노드에 대해서도 다시 방문 할 수 있다. (여러 갈래 길 중 가장 짧은 거리를 찾는 문제)
+
+4. 예를 들어 ```hit -> hot -> dot -> dog -> log -> cog``` 방식으로 탐색을 진행한다면 답과 다르게 5번의 과정을 거치고 이미 방문한 노드이므로 다시 탐색하지 않게 된다.
+
+5. 따라서 dfs 함수의 마지막 부분에서 visited를 다시 false로 만들어서 이전에 ```hit -> hot -> dot -> dog -> log ->cog``` 탐색을 수행했어도 다시 ```hit -> hot -> dot -> dog -> cog```을 수행해 답인 4를 찾을 수 있어야한다.
+
+
+
+
+
+<br>
+
+---
+### 풀이 코드
+```java
+import java.util.*;
+
+class Solution {
+    static boolean[] check;
+    static int answer;
+    public int solution(String begin, String target, String[] words) {
+        answer = 1000;
+        check = new boolean[words.length];
+        
+        for(int i =0; i<check.length; i++){
+            int count =0;
+            for(int j =0; j<words[i].length();j++){
+                if(begin.charAt(j) != words[i].charAt(j)) count++;
+            }
+            if(count==1){
+                dfs(words[i], words, 1, target, i);
+            }
+        }
+        if(answer == 1000) return 0;
+        return answer;
+    }
+    
+    void dfs(String str, String[] words, int d, String t, int index){
+        check[index] =true;
+        
+        if(str.equals(t) && answer > d){
+            answer = d;
+        }
+        else{
+            for(int i =0; i<words.length; i++){
+                int count =0;
+                for(int j =0; j<words[i].length();j++){
+                    if(str.charAt(j) != words[i].charAt(j)) count++;
+                }
+                if(!check[i] && count==1){
+                    dfs(words[i], words, d+1, t, i);
+                }
+            }
+        }
+        check[index] =false;    // 핵심
+    }
+}
+```
+
+<br>
+
+---
+### 느낀 점
+
+dfs, bfs 탐색 문제 중 어렵지 않은 기본 난이도 문제였다.
+
+처음엔 개념 이해도 어려웠지만 지금은 쉬운 문제라도 제 힘으로 풀 수 있게되어 기쁘다.
+
+**뭐든 조바심 갖지 않고 천천히 꾸준히 연습 해야겠다.**
