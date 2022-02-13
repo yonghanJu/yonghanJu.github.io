@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  Scope Function
-date:   2022-02-13 21:06:00 +0300
+date:   2022-02-10 21:06:00 +0300
 categories:   Kotlin
 ---
 
