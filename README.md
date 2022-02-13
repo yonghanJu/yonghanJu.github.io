@@ -6,7 +6,7 @@ permalink: /about/
 
 ***
 
-![alt text](/public/img/screenshot-1.png)
+![alt text](/public/img/konkuk.png)
 
 ***
 #### Attending Konkuk University
