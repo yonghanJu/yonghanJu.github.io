@@ -11,26 +11,9 @@ categories:   Kotlin
 
 일반적인 컬렉션 연산들은 read-only, mutable 컬렉션 둘다 사용 가능하며 크게 아래와 같이 분류된다.
 
+Transformations, Filtering, plus and minus operators, Grouping, Retrieving collection parts, Retrieving single elements, Ordering, Aggregate operations
+
 오늘은 그중에서 __Transformations__ 에 대해 정리해보았다.
-
-## Transformations
-
-## Filtering
-
-## plus and minus operators
-
-## Grouping
-
-## Retrieving collection parts
-
-## Retrieving single elements
-
-## Ordering
-
-## Aggregate operations
-
-
-# Trasformation
 
 ## Map
 
