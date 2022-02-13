@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  Collections Operations
-date:   2022-02-12 22:50:00 +0300
+date:   2022-02-13 22:50:00 +0300
 categories:   Kotlin
 ---
 
