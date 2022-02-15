@@ -1,0 +1,501 @@
+---
+layout: post
+title:  로또 번호 CodeLab(MVVM, Data Binding, DiffUtil)
+date:   2022-02-15 17:48:00 +0900
+categories:   Codelab
+---
+
+## 로또 생성기 어플리케이션(Two-side Data Binding, MVVM pattern, DiffUtil)
+
+<Br>
+
+이번 실습에서는 로또 번호 생성기 어플리케이션을 만들어 보며 간단히 [DataBinding] 과  [ViewModel] 를 활용해서 MVVM 패턴을 적용하여 관심사 분리를 실현이 목표이다.
+
+[DataBinding]: https://developer.android.com/topic/libraries/data-binding
+
+[ViewModel]: https://developer.android.com/topic/libraries/architecture/viewmodel
+
+<br>
+
+## 1. gradle 파일에 코드 추가
+
+<br>
+
+우선 gradle.build(module level) 파일 안에 뷰바인딩 사용 코드를 작성
+
+```
+android {
+    ...
+    buildFeatures {
+        dataBinding = true
+    }
+}
+```
+
+<br><br>
+
+## 2. 메인 엑티비티 뷰 바인딩으로 대체
+
+이후 아래와 같이 ```MainActivity.kt``` 안에 바인딩을 선언
+
+```kotlin
+    private lateinit var binding: ActivityMainBinding
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
+    }
+```
+
+<br>
+<br>
+
+## 3. 화면 구성
+<br>
+
+```activity_main.xml```을 아래 사진과 같이 만들어준다.
+
+![alt text](/public/img/20220215_1.png)
+
+
+<br>
+
+__DataBinding__ 사용을 위해 중요한 부분은 root 레이아웃을 ```<layout></layout>``` 태그로 감싸주는 것이다.
+
+```<layout></layout>``` 태그 안에서 kotlin class를 임포트하고 데이터에 접근할 수 있다.
+
+<br>
+
+activity_main.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<layout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".MainActivity">
+
+
+        <NumberPicker
+            android:id="@+id/numberPicker"
+            android:layout_width="60dp"
+            android:layout_height="160dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginTop="100dp"/>
+
+        <Button
+            android:id="@+id/btn_Add"
+            android:text="Add"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btn_Reset"
+            app:layout_constraintTop_toBottomOf="@+id/numberPicker"/>
+
+        <Button
+            android:text="Reset"
+            android:id="@+id/btn_Reset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/btn_Add"
+            app:layout_constraintTop_toBottomOf="@+id/numberPicker"/>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btn_Add"
+            android:gravity="center"
+            android:layout_marginTop="36dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+            </androidx.recyclerview.widget.RecyclerView>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_Random"
+            android:text="Random"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_margin="16dp"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
+```
+<br>
+
+item_view.xml (리사이클러뷰 아이탬 xml 생성, 마찬가지로 ```layout``` 태그로 감싸기)
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/number"
+            android:textSize="16sp"
+            android:textColor="@color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="5dp"/>
+    </FrameLayout>
+
+</layout>
+```
+
+<br>
+<br>
+
+## 4. 데이터 바인딩 사용을 위한 데이터 클래스 생성
+
+Int형 자료를 포함하는 데이터 클래스를 생성해주자.
+
+```kotlin
+// LottoNumber.kt
+data class LottoNumber (val number: Int)
+```
+
+<br>
+<Br>
+
+## 5. 리사이클러뷰 어뎁터(RecyclerView Adapter) 생성하기
+
+<Br>
+
+로또 번호를 띄울 리사이클러뷰 생성을 위해 어뎁터를 만든다.
+
+아래 사용된 어뎁터는 ```DiffUtil```을 활용한 리사이클러뷰로 기존 리사이클러뷰 보다 [더 좋은 성능][link5]을 발휘한다.
+
+[link5]: https://developer.android.com/reference/kotlin/androidx/recyclerview/widget/DiffUtil
+
+<br>
+
+```kotlin
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.jyh.numberpicker.databinding.ItemViewBinding
+
+class NumberAdapter() : ListAdapter<LottoNumber,
+        NumberAdapter.ViewHolder>(DiffCallback) {
+
+    companion object DiffCallback : DiffUtil.ItemCallback<LottoNumber>() {
+        override fun areItemsTheSame(oldItem: LottoNumber, newItem: LottoNumber): Boolean {
+            return oldItem === newItem
+        }
+
+        override fun areContentsTheSame(oldItem: LottoNumber, newItem: LottoNumber): Boolean {
+            return oldItem.number == newItem.number
+        }
+    }
+    
+    class ViewHolder(private val binding: ItemViewBinding):RecyclerView.ViewHolder(binding.root) {
+        fun bind(lottoNumber: LottoNumber) {
+            binding.lottoNumber = lottoNumber
+            binding.executePendingBindings()
+        }
+    }
+
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NumberAdapter.ViewHolder {
+        return ViewHolder(ItemViewBinding.inflate(LayoutInflater.from(parent.context)))
+    }
+
+    override fun onBindViewHolder(holder: NumberAdapter.ViewHolder, position: Int) {
+        val lottoNumber = getItem(position)
+        holder.bind(lottoNumber)
+    }
+}
+```
+<Br>
+<br>
+
+## 6. 로또 번호 뽑기에 필요한 ViewModel 만들기
+
+<br>
+
+[ViewModel][link6]은 lifrcycle의 변화를 인지해 불필요한 관찰에 의한 메모리 누수를 방지하며 비지니스로직을 ui와 분리하고 Room 등 다른 AAC Library와 호완이 좋다.
+
+[link6]: https://developer.android.com/topic/libraries/architecture/viewmodel
+
+<br>
+
+```kotlin
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import kotlin.random.Random
+
+class NumberViewModel: ViewModel(){
+
+    // 선택된 번호
+    private val _curNumber = MutableLiveData<Int>() // 외부에서 변경 가능
+    val curNumber:LiveData<Int> // 외부에서 접근 가능
+        get() = _curNumber
+
+    // 현재 리스트
+    private val _numberList = MutableLiveData<MutableList<LottoNumber>>()
+    val numberSet:LiveData<MutableList<LottoNumber>>
+        get() = _numberList
+
+    // 초기화
+    init{
+        _numberList.value = mutableListOf()
+        _curNumber.value = 1
+    }
+
+    // 리스트에 추가
+    fun add(num: Int){
+        if(_numberList.value!!.size>=6) return
+        _numberList.value = mutableSetOf<LottoNumber>().apply {
+            _numberList.value!!.forEach{this.add(it)}
+            add(LottoNumber(num))
+        }.toSortedSet { a, b -> a.number - b.number }.toMutableList()
+    }
+
+    // 랜덤 번호 추가
+    fun random(){
+        val tmp = _numberList.value!!.toMutableSet()
+        while(tmp.size<6) { tmp.add( LottoNumber(Random.nextInt(1,45)))}
+        _numberList.value = tmp.toSortedSet { a, b -> a.number - b.number }.toMutableList()
+    }
+
+    // 리스트 초기화
+    fun reset(){
+        _numberList.value = mutableListOf()
+    }
+
+    // 현재 번호 설정
+    fun  setCurNum(num: Int){
+        _curNumber.value = num
+    }
+}
+```
+
+<br><br>
+
+## 7. Binding Adapter(바인딩 어뎁터) 
+
+<br>
+
+데이터 바인딩을 위해 바인딩 어뎁터를 만들어 주기 위해```@BindingAdapter``` 어노테이션을 달아줘야한다.
+
+<br>
+
+```kotlin
+// BindingAdapter.kt 생성
+import android.widget.TextView
+import androidx.databinding.BindingAdapter
+import androidx.recyclerview.widget.RecyclerView
+
+// 리사이클러뷰에서 사용됨
+// 첫 번째 인자는 사용되는 뷰, 두 번째 인자는 view에 사용되는 객체
+@BindingAdapter("listData")
+fun bindRecyclerView(recyclerView: RecyclerView,
+                     data: MutableList<LottoNumber>) {
+    val adapter = recyclerView.adapter as NumberAdapter
+    adapter.submitList(data)
+}
+
+// 아이탬 안 텍스트뷰에서 사용됨
+@BindingAdapter("setNumber")
+fun setNumber(textView: TextView,
+                     lottoNumber: LottoNumber) {
+    textView.text = lottoNumber.number.toString()
+}
+```
+
+<Br><Br>
+
+## 8. MainActivity.kt 에서 리사이클러뷰, 뷰모델 초기화
+
+```kotlin
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+
+    // NumberPicker 초기화를 위해 선언
+    val numberPicker: NumberPicker by lazy { binding.numberPicker }
+
+    // ViewModel 초기화를 위해 선언
+    private val viewModel: NumberViewModel by lazy {
+        ViewModelProvider(this).get(NumberViewModel::class.java)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflat(layoutInflater)
+        setContentView(binding.root)
+
+        // NumberPicker 초기화를 위한 함수
+        init()
+    }
+
+
+    // 라이프사이클, 데이터 바인딩을 위한 뷰모델, 넘버픽커 등 초기화
+    private fun init() {
+        binding.lifecycleOwner = this
+        binding.viewModel = viewModel
+        binding.recyclerView.layoutManager = LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL, false)
+        binding.recyclerView.adapter =NumberAdapter()
+        numberPicker.minValue = 1
+        numberPicker.maxValue = 45
+    }
+    
+}
+```
+
+<br><br>
+
+## 9. Data Binding 양방향 연결하기
+
+<br>
+
+우리가 만든 앱의 기능을 구현하기 위해서는 
+
+0. 리사이클러뷰 로직 구현
+1. 로또 번호 추가
+2. 로또 번호 초기화
+3. 로또 번호 랜덤 생성
+
+4가지 기능을 연결해야 한다.
+
+<br>
+
+0. 가장 먼저 0번 구현을 위해 기본적인 데이터 바인딩 세팅이 필요하다
+
+데이터 바인딩을 위해 ```activity_main.xml```, ```item_view.xml``` 파일 상단의 ```layout``` 태그 바로 밑에 데이터 바인딩에 사용될 클래스를 추가하자.
+
+<br>
+
+
+```xml
+<layout>
+    
+    <!-- activity_main.xml 추가-->
+    <data>
+        <variable
+            name="viewModel"
+            type="com.jyh.numberpicker.NumberViewModel" />
+    </data>
+
+    <!-- item_view.xml 추가-->
+    <data>
+        <variable
+            name="LottoNumber"
+            type="com.jyh.numberpicker.LottoNumber"/>
+    </data>
+
+    ...
+
+</<layout>>
+```
+
+<br>
+
+그리고 ```activity_main.xml``` 의 리사이클러뷰에 다음 속성을 추가한다.
+
+```xml
+app:listData="@{viewModel.numberSet}"
+```
+
+<br>
+
+위 속성을 추가함으로써 단방향 데이터 바인딩이 가능하다.
+
+즉, 리스트가 변화가 관찰될 때 ```BindingAdapter.kt```의 아래
+
+```kotlin
+// 1번째 인자는 위 데이터 바인딩에 사용되는 리사이클러뷰
+// 2번쨰 인자는 위에 사용된 listData의 인자가 전달된다.
+@BindingAdapter("listData")
+fun bindRecyclerView(recyclerView: RecyclerView,
+                     data: MutableList<LottoNumber>) {
+    val adapter = recyclerView.adapter as NumberAdapter
+    adapter.submitList(data)
+}
+```
+
+함수가 실행되어 자동으로 ui를 업데이트 해준다.
+
+<br>
+
+마찬가지로  ```item_view.xml``` 파일의 텍스트뷰에도 아래 속성을 추가해주자
+
+```xml
+app:setNumber="@{LottoNumber}"
+```
+
+
+<br>
+
+1. 추가 기능은 viewModel의 curNumber 맴버를 활용해 구현한다.
+
+UI 변동시 viewModel로 현재 번호를 넘겨 주기 위해 activity_main.xml 의 NumberPicker에 양방향 데이터 바인딩을 구현하자.
+
+<br>
+
+xml 파일 안에 NumberPicker를 찾아서 아래 속성을 추가한다.
+
+NumberPicker의 값이 사용자에 의해 바뀔 때 마다 ```viewModel.setCurNum()``` 함수가 실행 되어 ```setCurNum```은 __viewModel__ 객체 안에서 관리된다. __(양방향 데이터 바인딩)__
+
+```xml
+android:onValueChange = "@{(picker,oldv,newv) -> viewModel.setCurNum(newv)}"
+```
+
+<br>
+
+2. 초기화 기능을 위해 초기화 버튼과 viewModel 함수를 연결하자
+
+```activity_main.xml``` 파일의 리셋 버튼에 아래 속성을 추가
+
+```xml
+android:onClick="@{()->viewModel.reset()}"
+```
+
+<br>
+
+3. 랜덤 생성 기능을 위해 랜덤 버튼에 함수 연결
+
+```activity_main.xml``` 파일의 랜덤 버튼에 아래 속성을 추가
+
+```xml
+android:onClick="@{()->viewModel.random()}"
+```
+
+<br><br>
+
+이로써 모든 과정이 끝났으며
+
+DiffUtil을 활용한 리사이클러뷰 어뎁터 구현, 데이터 바인딩을 활용한 UI 업데이트을 통해 로또 번호 생성기 어플에 MVVM 패턴 적용해 보았다.
