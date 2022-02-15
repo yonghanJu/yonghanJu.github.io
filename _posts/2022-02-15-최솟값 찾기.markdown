@@ -1,0 +1,135 @@
+---
+layout: post
+title:  최솟값 찾기 - BOJ_1874(Java, Kotlin)
+date:   2022-02-15 21:13:00 +0900
+categories:   Algorithm
+---
+
+### 백준 [11003]번 플레티넘5 난이도 문제
+
+<br>
+
+문제
+
+*** 
+
+N개의 수 A1, A2, ..., AN과 L이 주어진다.
+
+Di = Ai-L+1 ~ Ai 중의 최솟값이라고 할 때, D에 저장된 수를 출력하는 프로그램을 작성하시오. 이때, i ≤ 0 인 Ai는 무시하고 D를 구해야 한다.
+
+<Br>
+
+입력
+
+***
+
+첫째 줄에 N과 L이 주어진다. (1 ≤ L ≤ N ≤ 5,000,000)
+
+둘째 줄에는 N개의 수 Ai가 주어진다. (-109 ≤ Ai ≤ 109)
+
+<br>
+
+출력
+
+***
+
+첫째 줄에 Di를 공백으로 구분하여 순서대로 출력한다.
+
+[11003]: https://www.acmicpc.net/problem/11003
+
+<br>
+
+예제 입력 
+
+>12 3 <Br>
+>1 5 2 3 6 2 3 7 3 5 2 6
+
+예제 출력 
+
+>1 1 1 2 2 2 2 2 3 3 2 2
+
+<br><Br>
+
+이 문제를 처음 kotlin으로 접근해서 풀었다.
+
+분명 알고리즘은 맞는 것 같은데 계속 시간초과가 발생하니 답답할 따름이었다.
+
+__kotlin 코드__
+
+```kotlin
+import java.io.*
+import java.util.*
+
+fun main() = with(BufferedReader(InputStreamReader(System.`in`))) {
+
+    val bw = BufferedWriter(OutputStreamWriter(System.`out`))
+    val (n,qsize) = readLine().split(' ').map{it.toInt()}
+    val sb = StringBuilder()
+    val token = StringTokenizer(readLine())
+    val dq:Deque<Pair<Int,Int>> = ArrayDeque() // index, value
+    var index = 0
+
+    while (token.hasMoreTokens()){
+        val now = token.nextToken().toInt() // 현재 값
+        while(!dq.isEmpty() && dq.peekLast().second > now) dq.pollLast() // 현재 값 보다 클 때 빼기
+        dq.addLast(Pair(++index,now))   // 현재 값 추가
+        if(index-dq.peekFirst().first ==qsize ) dq.pollFirst() // 만약 길이가 더 길다면 맨 왼쪽에 값 제거
+        bw.write("${dq.peekFirst().second} ")
+    }
+    bw.flush()
+    bw.close()
+}
+```
+
+<br>
+
+아무리 시도해도 답이 나오지 않고 kotlin 언어 중 유일한 정답자의 답을 보니 다른 java나 c++, c 언어의 알고리즘과는 사뭇 다른 알고리즘이었다.
+
+<br>
+
+solved.ac 제작자 또한 kotlin으로 시도했다가 결국 다른 언어를 사용해 푼것을 보고 나도 java로 풀기로했다.
+
+아래 코드는 java 언어를 활용해서 위 kotlin 코드와 동일한 알고리즘으로 풀이한 것으로 정답을 받았다.
+
+```java
+import java.io.*;
+import java.util.*;
+
+class Pair{
+	int index;
+	int value;
+	Pair(int index, int value){
+		this.index = index;
+		this.value = value;}
+}
+
+public class Main {
+	
+
+	public static void main(String[] args) throws NumberFormatException, IOException {
+
+		
+		
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
+		StringTokenizer token = new StringTokenizer(br.readLine());
+		int n =Integer.valueOf(token.nextToken());
+		int l =Integer.valueOf(token.nextToken());
+		int index =0;
+		token = new StringTokenizer(br.readLine());
+		StringBuilder sb = new StringBuilder();
+		Deque<Pair> dq = new ArrayDeque<Pair>();
+		
+		while(token.hasMoreTokens()) {
+			int now = Integer.valueOf(token.nextToken());
+			while(!dq.isEmpty() && dq.peekLast().value > now) dq.pollLast();
+			dq.addLast(new Pair(++index,now));   // 현재 값 추가
+	        if(index-dq.peekFirst().index == l ) dq.pollFirst(); // 만약 길이가 더 길다면 맨 왼쪽에 값 제거
+	        sb.append(dq.peekFirst().value).append(' ');
+		}
+		
+		System.out.println(sb);
+	}
+
+}
+```
