@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  공개 SW 개발자 대회 후기 (TmaxOS)
+title:  공개 SW 개발자 대회 후기 (TmaxOS 장려상)
 date:   2021-12-03 17:24:00 +0300
 categories:   Competition
 ---
