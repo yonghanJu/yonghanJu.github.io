@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  BFS 유기농배추 - BOJ_1874(Kotlin)
+title:  BFS 유기농배추 - BOJ_1012(Kotlin)
 date:   2022-02-25 22:06:00 +0900
 categories:   Algorithm
 ---
