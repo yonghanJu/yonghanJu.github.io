@@ -66,7 +66,7 @@ categories:   Competition
 
 #### 스크린샷
 
-<img src="https://github.com/yonghanJu/yonghanJu.github.io/blob/master/public/img/PIPI.png?raw=true"  width="900" height="1000"/>
+<img src="https://github.com/yonghanJu/yonghanJu.github.io/blob/master/public/img/PIPI.png?raw=true"  width="850" height="1000"/>
 
 
 <br>
