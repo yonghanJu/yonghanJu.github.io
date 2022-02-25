@@ -56,8 +56,8 @@ categories:   Competition
 
 ![pipi1](/public/img/PIPI1.png)
 
-<img src="https://github.com/yonghanJu/yonghanJu.github.io/tree/master/public/img/PIPI2.png"  width="200" height="400"/>
-<img src="https://github.com/yonghanJu/yonghanJu.github.io/tree/master/public/img/PIPI3.png"  width="200" height="400"/>
+<img src="https://github.com/yonghanJu/yonghanJu.github.io/blob/master/public/img/PIPI2.png?raw=true"  width="200" height="400"/>
+<img src="https://github.com/yonghanJu/yonghanJu.github.io/tree/master/public/img/PIPI3.png?raw=true"  width="200" height="400"/>
 <br>
 
 결국 여러 기기를 테스트 해본 결과 +-10% 오차범위 안에서 같은 데시벨을 발생시키는 앱을 만들 수 있었고 문제 해결 능력 평가항목에서 가산점을 받을 수 있었다!!!
