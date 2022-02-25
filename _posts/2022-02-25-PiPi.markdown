@@ -53,11 +53,11 @@ categories:   Competition
 
 그래서 이어폰과 헤드셋의 공학적 원리를 찾아보았고 단위 와트당 데시벨을 나타내는 음압감도의 통계량을 계산해 신뢰할 수 있는 데시벨을 발생시키기로 했다.
 
-![pipi1](../public/img/PIPI1.png)
+![pipi1](/public/img/PIPI1.png)
 
-![pipi2](../public/img/PIPI2.png)
+![pipi2](/public/img/PIPI2.png)
 
-![pipi3](../public/img/PIPI3.png)
+![pipi3](/public/img/PIPI3.png)
 
 <br>
 
@@ -67,7 +67,7 @@ categories:   Competition
 
 #### 스크린샷
 
-![pipi](../public/img/PIPI.png)
+![pipi](/public/img/PIPI.png)
 
 
 <br>
