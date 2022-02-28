@@ -71,3 +71,23 @@ categories:   Codelab
 
 </manifest>
 ```
+
+<br>
+
+# 배경 색 바꾸기
+
+```xml
+<!-- res/values/themes.xml 스타일 안에 item 추가-->
+<item name="android:windowBackground">@color/name</item>
+```
+
+<br>
+
+# 상단 바 색 바꾸기
+
+```xml
+<!-- res/values/themes.xml 스타일 안에 item 추가-->
+<item name="android:statusBarColor">@color/name</item>
+```
+
+<br>
