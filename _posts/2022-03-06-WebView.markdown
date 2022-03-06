@@ -1,0 +1,77 @@
+---
+layout: post
+title:  WebView, IMEOption, Ripple
+date:   2022-03-06 19:00:00 +0900
+categories:   Codelab
+---
+
+
+# 웹 뷰 사용하기
+
+
+<br>
+
+1. Manifest에 usesCleartextTraffic 속성 추가
+```xml
+android:usesCleartextTraffic ="true"
+```
+
+<br>
+
+
+2. 웹뷰 선언, 초기화
+```kotlin
+// 웹뷰 선언
+private val webView: WebView by lazy{ binding.webView }  
+
+// 웹뷰 초기화
+private fun initView(){
+    webView.apply{
+        webViewClient = WebViewClient()     // 단말 기본 설정 앱말고 현 앱으로 웹뷰 띄우기
+        settings.javaScriptEnable = true    // 자바 스크립트 기능 활성화
+        loadUrl("https://www.google.com")   // http만 사용하면 에러 발생
+    }
+}
+```
+
+<br>
+
+3. 웹뷰 위 주소창(EditText)에 imeOption 설정
+```xml
+android:imeOptions:="actionDone"
+```
+
+<br>
+
+4. 주소창(EditText) 바인딩
+```kotlin
+// 주소창 입력시 주소 이동과 키보드 닫힘
+private fun bindViews(){
+    addressBar.setOnEditorActionListener{ v, actionId, event ->
+        if(actionId == EditorInfo.IEM_ACTION_DONE){
+            webView.loadUrl(v.text.toString())
+        }
+
+        return@setOnEditorActionListener false // 키보드 닫힘
+    }
+}
+```
+
+5. 뒤로가기 버튼 오버라이딩
+```kotlin
+override fun onBackPressed(){
+    if(webView.canGoBack()){    // 뒤로가기 가능 시
+        webView.goBack()
+    }else{
+        super.onBackPressed()   // 기존 뒤로가기 버튼 작동
+    }
+}
+```
+
+6. 상단 바(주소창 좌우)의 뒤로가기, 앞으로 가기 버튼(ImageButton)에 ```ripple``` 기능 추가하기
+```xml
+<!-- ripple(눌림모양) 설정-->
+android:background = "?attr/selectableItemBackground"
+<!-- 좌우 비율 조정(constraintLayout) width:height-->
+app:layout_constraintDimensionRatio ="1:1"
+```
