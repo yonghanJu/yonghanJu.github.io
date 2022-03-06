@@ -36,9 +36,11 @@ private fun initView(){
 
 <br>
 
-3. 웹뷰 위 주소창(EditText)에 imeOption 설정
+3. 웹뷰 위 주소창(EditText)에 imeOption 설정, 전체 선택 설정
 ```xml
 android:imeOptions:="actionDone"
+<!--주소창 선택시 자동 문자열 전체 선택-->
+android:selectAllOnFocus="true"
 ```
 
 <br>
@@ -49,7 +51,14 @@ android:imeOptions:="actionDone"
 private fun bindViews(){
     addressBar.setOnEditorActionListener{ v, actionId, event ->
         if(actionId == EditorInfo.IEM_ACTION_DONE){
-            webView.loadUrl(v.text.toString())
+
+            val loadingUrl = v.text.toString()
+            if(URLUtill.isNetworkUrl(loadingUrl)){ // http가 붙어있다면?
+                webView.loadUrl(loadingUrl)
+            }
+            else{
+                webView.loadUrl("http://$loadingUrl")
+            }
         }
 
         return@setOnEditorActionListener false // 키보드 닫힘
