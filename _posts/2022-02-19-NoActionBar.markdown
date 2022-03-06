@@ -88,6 +88,9 @@ categories:   Codelab
 ```xml
 <!-- res/values/themes.xml 스타일 안에 item 추가-->
 <item name="android:statusBarColor">@color/name</item>
+
+<!--만약 밝은 색 또는 transparent(#00000000) 지정시 자동으로 statusBar 아이콘 색을 어둡게 변경 -->
+<item name="android:windowLightStatusBar">true</item>
 ```
 
 <br>
