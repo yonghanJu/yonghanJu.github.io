@@ -1,0 +1,46 @@
+---
+layout: post
+title:  히스토그램 - BOJ_1725(Kotlin, Stack, Platinum)
+date:   2022-03-08 15:53:00 +0900
+categories:   Algorithm
+---
+
+# 히스토드램
+
+<br>
+
+[히스토그램] 문제는 Stack 활용, Platinum 난이도의 문제이다.
+
+코드는 짧은 반면 난이도는 높고 생각해내기 어려웠음
+
+<br>
+
+[히스토그램]: https://www.acmicpc.net/problem/1725
+
+```kotlin
+// 2022-01-29
+// https://www.acmicpc.net/problem/1725
+
+import java.io.*
+import java.util.*
+
+data class Pair(val height:Int, var width:Int)
+
+fun main() = with(BufferedReader(InputStreamReader(System.`in`))) {
+
+    val n = readLine().toInt()
+    var answer = 0
+    val stack = Stack<Pair>()
+
+    repeat(n+1){
+        val now = if(it != n) readLine().toInt() else 0
+        var nowWidth = 1
+        while(!stack.empty() && stack.peek().height > now){
+            nowWidth += stack.peek().width
+            answer = maxOf(stack.pop().height*(nowWidth-1), answer)
+        }
+        stack.add(Pair(now,nowWidth))
+    }
+    print(answer)
+}
+```
