@@ -1,0 +1,86 @@
+---
+layout: post
+title:  BFS 숨바꼭질 - BOJ_17071
+date:   2022-03-09 18:36:00 +0900
+categories:   Algorithm
+---
+
+<br>
+
+BFS 활용 숨바꼭질 시리즈 문제 중 가장 난이도가 높은 문제이다.
+
+<br>
+
+# 알고리즘 풀이
+
+<br>
+
+__문제상황__
+
+<br>
+
+위 문제에서는 한번 방문했던 곳이더라도 다시 방문 하는 것이 가능하다.
+하지만 모든 곳을 다시 방문한다면 메모리초과, 시간초과가 발생한다.
+
+따라서 우리는 다시 방문하는 경우를 최소화 시킨다.
+
+<br>
+
+__핵심 내용__
+
+한번 방문한 곳을 다시 방문하는 경우(최단거리로)는 현재 위치에서 (+1, -1) 또는 (-1, +1) 순서대로 2번 이동하는 것이다.
+
+따라서 한번 도착했던 곳은 앞으로 짝수 번 째마다 다시 방문 가능하다는 점이라.
+
+이를 이용해 한번 방문했던 곳에 K가 위치할 수 있다면,  최단거리 + 짝수번 반복 값으로 답을 구할 수있다.
+
+<br>
+
+
+```kotlin
+// 2022-03-08
+// https://www.acmicpc.net/problem/17071
+
+import java.io.*
+import java.util.*
+
+data class Node(val x:Int, val time:Int)
+
+fun main() = with(BufferedReader(InputStreamReader(System.`in`))) {
+    val (n,k) = readLine().split(' ').map{it.toInt()}
+    val isVisited = Array(500001){IntArray(2){-1} }
+    val q = ArrayDeque<Node>()
+    q.addFirst(Node(n,0))
+    isVisited[n][0] = 0
+
+    while(q.isEmpty().not()){
+        val cur= q.removeLast()
+        val nt = cur.time+1
+        if(cur.x-1>=0 && isVisited[cur.x-1][nt%2] == -1){
+            q.addFirst(Node(cur.x-1, nt))
+            isVisited[cur.x-1][nt%2] = nt
+        }
+        if(cur.x+1<=500000&& isVisited[cur.x+1][nt%2] == -1){
+            q.addFirst(Node(cur.x+1, nt))
+            isVisited[cur.x+1][nt%2] = nt
+        }
+        if(cur.x*2<=500000&& isVisited[cur.x*2][nt%2] == -1){
+            q.addFirst(Node(cur.x*2, nt))
+            isVisited[cur.x*2][nt%2] = nt
+        }
+    }
+
+    var K = k
+    var answer = 0
+    var time = 0
+    while(K<=500000){
+        if(isVisited[K][time%2] != -1 && isVisited[K][time%2] <= time ){
+            println(time)
+            return
+        }
+        time++
+        K+=time
+    }
+    println(-1)
+}
+```
