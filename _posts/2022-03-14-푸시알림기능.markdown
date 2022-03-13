@@ -1,0 +1,190 @@
+---
+layout: post
+title:  푸시 알림
+date:   2022-03-14 00:54:00 +0900
+categories:   Codelab
+---
+
+# Firebase Cloud Message 
+
+<Br>
+
+FCM은 알림 메세지, 데이터 메세지 2가지 푸시 알림 서비스를 제공한다.
+
+알림 메세지는 쉽게 구현이 가능하지만 앱이 백그라운드에 있을 때만 알림이 작동되며 커스텀이 힘들다.
+
+그에 비해 데이터 메세지는 앱이 백그라운드, 포그라운드에 상관 없이 알림이 작동되며 커스텀이 가능하므로 대부분 데이터 메세지 방식을 채택한다.
+
+<br>
+
+1. FCM 종속성 추가하기
+
+<br>
+
+2. 토큰 받기
+
+```kotlin
+private fun initFirebase(){
+    FirebaseMessaging.getInstance().token
+    .addCompleteListener{ task->
+        if(task.isSuccessful){
+            //TODO()
+            Log.d("tag", "token: ${task.result}")
+        }
+    }
+}
+```
+
+<br>
+
+3. MyFirebaseCloudMessagingService 클래스 생성 
+
+<br>
+
+```kotlin
+class MyFirebaseCloudmessaingService: FirebaseMessagingService(){
+    override fun onNewToken(p0: String){
+        super.onNewToken(p0)
+        //TODO() 토큰 변경시 필요한 작업
+    }     
+
+    override fun onMessageReceived(remoteMessage: RemoteMessage){
+        super.onMessageReceived(remoteMessage)
+        //TODO() 데이터 메세지 수신시 필요한 작업
+        // message.data.toString() ->"{title=Test Title, message=Test message}"
+        
+        // 아래에서 오버라이딩, 구현
+        createNotificationChannel() 
+
+        val type = remoteMessage.data["type"]?.let{ NotificationType.valueOf(it) } // 아래 6번 에서 enum 구현
+        val title = remoteMessage.data["Title"]
+        val message = remoteMessage.data["message"]
+
+        type ?: return
+
+        NotificationManagerCompat.from(this)
+            .notify(type.id, createNotification(type, title, message))
+    }
+}
+```
+
+<Br>
+
+4. Manifest의 application 안에 service 추가하기
+
+```xml
+<service android:name=".MyFirebaseMessagingService" android:exported="false">
+    <intent-filter>
+        <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+    </intent-filter>
+</service>
+```
+
+<br>
+
+5. android 8.0 이상 부터는 무조건 알림을 채널에 포함해야 하며 그 미만 버전은 채널포함 x
+
+```kotlin
+class MyFirebaseCloudmessaingService: FirebaseMessagingService(){
+    ...
+
+    // 오버라이딩
+    private fun createNotificationChannel(){
+        if(Build.VERSION.SDK_INT >= Build.VERSION.CODES.O){ // 안드로이드 오레오 (8.0)
+            val channel =  NotificationChannel(CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+
+            channel.descriptoin = CHANNEL_DESCRIPTION
+            
+            (getSystemService(Context.NOTIFICATION_SERVICE)  as NotificationManager)
+            .createNotificationChannel(channel)
+        }
+    }
+
+    companion object{
+        private const val CHANNEL_NAME = "Emoji party"
+        private const val CHANNEL_DESCRIPTION = "Emoji party를 위한 채널"
+        private const val CHANNEL_ID =  "Channel Id"
+    }
+}
+```
+
+<br>
+
+6. 알림 타입 Enum Class를 생성
+
+```kotlin
+enum class NotificationType(val title:String, val id:Int){
+    NORMAL("일반 알림", 0),
+    EXPANDABLE("확장형 알림", 1),
+    CUSTOM("커스터 알림",3)
+}
+```
+
+<br>
+
+7. createNotification() 함수 생성
+
+```kotlin
+// MyFirebaseCloudmessaingService 내부 함수 생성
+private fun createNotification(
+    type: NotificationTypr?,
+    title: String?, 
+    message: String?
+): Notification{
+    val intent = Intent(this, MainActivity::java.class).apply{
+        putExtra("notificationType", "${type.title} 타입")
+        // 같은 엑티비티가 이미 띄어져있다면 다시 띄우지 않고 그냥 유지하는 기능
+        // 해당 엑티비티의 onNewIntent(intent:Intent?) 를 오버라이딩 해줘야함 (8번)
+        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    }
+    val pendingIntent = PendingIntent.getActicity(this, type.id, intent, FLAG_UPDATE_CURRENT)
+
+    val notificationBuilder =   NotificationCompat.Builder(this, CHANNEL_ID)
+    .setSmallIcon(R.drawable.icon)
+    .setTitle(message.data["Title"])
+    .setText(message.data["message"])
+    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+    .setContentIntent(pendingIntent)    // 알림 종류별 수신
+    .setAutoCancel(true)                // 알림 수신 후 자동 알림 삭제  
+
+    when(type){
+        NotificationType.NORMAL -> Unit
+        NotificationType.EXPANDABLE ->{
+            notificationBuilder.setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText("Expandable BigText")
+            )
+        }
+        NotificationType.CUSTOM->{
+            // 커스텀 레이아웃을 생성하고 구현 가능
+        }
+    }
+    return notificationBuilder.build()
+}
+NotificationManagerCompat.from(this)
+    .notify(1, notificationBuilder.build())
+```
+
+<br>
+
+8. 메인 엑티비티에 알림 받는 기능 추가
+
+```kotlin
+override fun onNewIntent(intent:Intent?){
+    super.onNewIntent(intent)
+
+    setIntent(intent)
+    updateResult(true)
+}
+
+private fun updateResult(isNew: Boolean = false){
+    val text = 
+    // 알림으로 실행된 경우 알림 타입 명시
+    (intent.getStringExtra("notificationType") ?: "일반 실행" )
+    + if(isNew) "으로 갱신" else 으로 실행
+
+}
+```
