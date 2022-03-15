@@ -1,0 +1,40 @@
+---
+layout: post
+title:  Recursion 곱셈 - BOJ_1629
+date:   2022-03-16 00:00:00 +0900
+categories:   Algorithm
+---
+
+
+# 곰셈
+
+<br>
+
+__모듈러 성질 [ (a*b) mod c = ((a mod c)*(b mod c)) mod c ]__ 을 알고있어야 한다.
+
+__Divide and Conquer__ 방식으로 재귀를 통해 문제를 풀 수 있다.
+
+
+<br>
+
+```kotlin// 2022-03-15
+// https://www.acmicpc.net/problem/1629
+
+import java.io.*
+import java.math.BigInteger
+
+var A=0L
+var C=0L
+fun main() = with(BufferedReader(InputStreamReader(System.`in`))) {
+    val (a,b,c) = readLine().split(' ').map{it.toInt()}
+    A=a.toLong()
+    C=c.toLong()
+    print(re(b))
+}
+fun re(b:Int):Long {
+    if(b==1) return (A%C)
+    val tmp = re(b/2)
+    return if(b%2==0) (tmp%C)*(tmp%C)%C else ((((tmp%C)*(A%C))%C)%C)*(tmp%C)%C
+}
+
+```
