@@ -17,7 +17,8 @@ __Divide and Conquer__ 방식으로 재귀를 통해 문제를 풀 수 있다.
 
 <br>
 
-```kotlin// 2022-03-15
+```kotlin
+// 2022-03-15
 // https://www.acmicpc.net/problem/1629
 
 import java.io.*
