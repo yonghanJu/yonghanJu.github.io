@@ -2,7 +2,7 @@
 layout: post
 title:  BFS 비밀번호제작 - BOJ_20304(Kotlin)
 date:   2022-03-10 17:53:00 +0900
-categories:   Algorithm Kotlin
+categories:   Algorithm
 ---
 
 # 비밀번호 제작
