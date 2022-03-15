@@ -21,7 +21,6 @@ n.toString(2)
 <br>
 
 2. 2진수를 정수형으로 변환
-
 ```kotlin
 val str = "110"
 Integer.parseInt(str, 2)  
