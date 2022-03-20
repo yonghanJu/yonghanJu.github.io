@@ -1,0 +1,60 @@
+---
+layout: post
+title:  Moduler(Greedy) 예쁜 케이크  - BOJ_24040
+date:   2022-03-20 21:43:00 +0900
+categories:   Algorithm
+---
+
+![pipi1](/public/img/PIPI1.png)
+
+<img src="https://github.com/yonghanJu/yonghanJu.github.io/blob/master/public/img/PIPI2.png?raw=true"  width="200" height="400"/>
+
+
+
+
+# 예쁜 케이스(mod 연산 활용)
+
+<Br>
+
+이전에 풀었던 [곱셈] 문제에서 __모듈러(Moduler) 연산__ 을 활용했듯 이번 문제에서도 모듈러 연산 지식이 있어야만 풀 수 있다.
+
+여러가지 방법으로 다 도전했지만 결국 실패했고 결국 모듈러 연산을 통해 정답을 맞췄다.
+
+<br>
+
+# 모듈러 연산
+
+<br>
+
++, -, x 연산에 대해 아래와 같은 변환이 가능하다.
+
+__(a+b) mod c = (a mod c + b mod c) mod c__
+
+__(a-b) mod c = (a mod c - b mod c) mod c__
+
+__(a*b) mod c = (a mod c * b mod c) mod c__
+
+<br>
+
+
+[곱셈]: https://yonghanju.github.io/algorithm/2022/03/15/%EA%B3%B0%EC%85%89.html
+
+# 풀이
+
+<br>
+
+```kotlin// 2022-03-15
+// 2022-03-20
+// https://www.acmicpc.net/problem/24040
+
+import java.io.*
+import java.util.*
+
+fun main()= with(BufferedReader(InputStreamReader(System.`in`))) {
+    val case = readLine().toInt()
+    repeat(case){
+        val n = readLine().toLong()
+        println(if(n%3==2L || n%9==0L)  "TAK" else "NIE")
+    }
+}
+```
