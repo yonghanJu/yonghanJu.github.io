@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  Moduler(Greedy) 예쁜 케이크  - BOJ_24040
+title:  Moduler, Greedy 예쁜 케이크  - BOJ_24040
 date:   2022-03-20 21:43:00 +0900
 categories:   Algorithm
 ---
