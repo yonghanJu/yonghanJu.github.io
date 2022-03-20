@@ -5,12 +5,6 @@ date:   2022-03-20 21:43:00 +0900
 categories:   Algorithm
 ---
 
-![pipi1](/public/img/PIPI1.png)
-
-<img src="https://github.com/yonghanJu/yonghanJu.github.io/blob/master/public/img/PIPI2.png?raw=true"  width="200" height="400"/>
-
-
-
 
 # 예쁜 케이스(mod 연산 활용)
 
