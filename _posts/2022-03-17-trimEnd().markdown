@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  별 찍기 - 18, trimEnd()
+title:  Recursion,trimEnd() 별 찍기18 - BOJ_10993
 date:   2022-03-17 19:45:00 +0900
 categories:   Algorithm
 published: true
