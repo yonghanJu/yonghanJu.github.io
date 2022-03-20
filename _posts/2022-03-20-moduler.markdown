@@ -37,7 +37,8 @@ __(a*b) mod c = (a mod c * b mod c) mod c__
 
 <br>
 
-```kotlin// 2022-03-15
+```kotlin
+// 2022-03-15
 // 2022-03-20
 // https://www.acmicpc.net/problem/24040
 
