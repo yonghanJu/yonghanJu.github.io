@@ -21,7 +21,7 @@ published: true
 
 <br>
 
-```
+```kotlin
 // 2022-03-17
 // https://www.acmicpc.net/problem/10993
 
@@ -70,3 +70,4 @@ fun re(x:Int, y:Int, size:Int){
         re(x+2.0.pow(size-1).toInt()-1,y,size-1)
     }
 }
+```
