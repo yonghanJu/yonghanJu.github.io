@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  별 찍기 - 18, trimEnd()
-date:   2022-03-17149:45:00 +0900
+date:   2022-03-17 19:45:00 +0900
 categories:   Algorithm
 published: true
 ---
