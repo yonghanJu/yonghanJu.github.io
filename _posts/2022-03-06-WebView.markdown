@@ -12,6 +12,9 @@ categories:   Codelab
 <br>
 
 1. Manifest에 usesCleartextTraffic 속성 추가
+
+<Br>
+
 ```xml
 android:usesCleartextTraffic ="true"
 ```
@@ -20,6 +23,9 @@ android:usesCleartextTraffic ="true"
 
 
 2. 웹뷰 선언, 초기화
+
+<br>
+
 ```kotlin
 // 웹뷰 선언
 private val webView: WebView by lazy{ binding.webView }  
@@ -37,6 +43,10 @@ private fun initView(){
 <br>
 
 3. 웹뷰 위 주소창(EditText)에 imeOption 설정, 전체 선택 설정
+
+<br>
+
+
 ```xml
 android:imeOptions:="actionDone"
 <!--주소창 선택시 자동 문자열 전체 선택-->
@@ -46,6 +56,10 @@ android:selectAllOnFocus="true"
 <br>
 
 4. 주소창(EditText) 바인딩
+
+<Br>
+
+
 ```kotlin
 // 주소창 입력시 주소 이동과 키보드 닫힘
 private fun bindViews(){
@@ -67,6 +81,10 @@ private fun bindViews(){
 ```
 
 5. 뒤로가기 버튼 오버라이딩
+
+<br>
+
+
 ```kotlin
 override fun onBackPressed(){
     if(webView.canGoBack()){    // 뒤로가기 가능 시
@@ -78,6 +96,9 @@ override fun onBackPressed(){
 ```
 
 6. 상단 바(주소창 좌우)의 뒤로가기, 앞으로 가기 버튼(ImageButton)에 ```ripple``` 기능 추가하기
+
+<br>
+
 ```xml
 <!-- ripple(눌림모양) 설정-->
 android:background = "?attr/selectableItemBackground"
