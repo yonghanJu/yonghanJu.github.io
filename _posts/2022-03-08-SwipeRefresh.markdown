@@ -8,11 +8,11 @@ categories:   Codelab
 
 # 당겨서 새로고침 구현
 
-1. Swiperefreshlayout 종속성 추가
+* Swiperefreshlayout 종속성 추가
 
 <br>
 
-2. Swiperefreshlayout xml 추가
+* Swiperefreshlayout xml 추가
 
 <br>
 
@@ -27,7 +27,10 @@ categories:   Codelab
 
 <br>
 
-3. 리프레시 event 정의
+* 리프레시 event 정의
+
+<Br>
+
 ```kotlin
 // 리프레시 레이아웃 선언
 private val refreshLayout: SwiperefreshLayout by lazy{
@@ -45,7 +48,10 @@ private fun bindViews(){
 <br>
 
 
-4. 리프레시 후 isRefreshing 값 변경, __웹뷰 클라이언트__ 상속
+* 리프레시 후 isRefreshing 값 변경, __웹뷰 클라이언트__ 상속
+
+<br>
+
 ```kotlin
 // 웹 로딩에 관한 메서드들 정의
 // inner class 주의! 상위 클래스의 맴버에 접근 할 수 있음!!
@@ -71,7 +77,12 @@ inner class WebViewClient: android.webkit.WebViewClient(){
 }
 ```
 
-5. 로딩 프로그레스바 선언, __웹크롬 클라이언트__ 상속
+<Br>
+
+* 로딩 프로그레스바 선언, __웹크롬 클라이언트__ 상속
+
+<Br>
+
 ```kotlin
 // xml에 ContentLoadingProgressBar 생성 후 선언
 private val progressBar: ContentLoadingProgressBar by lazy{binding.progressBar}
