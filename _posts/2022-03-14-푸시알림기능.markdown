@@ -17,11 +17,12 @@ FCM은 알림 메세지, 데이터 메세지 2가지 푸시 알림 서비스를 
 
 <br>
 
-1. FCM 종속성 추가하기  
+* FCM 종속성 추가하기  
 
 <br/>
 
-2. 토큰 받기
+* 토큰 받기
+
 
 ```kotlin
 private fun initFirebase(){
@@ -34,10 +35,9 @@ private fun initFirebase(){
     }
 }
 ```
-
 <br>
 
-3. MyFirebaseCloudMessagingService 클래스 생성 
+* MyFirebaseCloudMessagingService 클래스 생성 
 
 <br>
 
@@ -70,7 +70,7 @@ class MyFirebaseCloudmessaingService: FirebaseMessagingService(){
 
 <Br>
 
-4. Manifest의 application 안에 service 추가하기
+* Manifest의 application 안에 service 추가하기
 
 ```xml
 <service android:name=".MyFirebaseMessagingService" android:exported="false">
@@ -82,7 +82,7 @@ class MyFirebaseCloudmessaingService: FirebaseMessagingService(){
 
 <br>
 
-5. android 8.0 이상 부터는 무조건 알림을 채널에 포함해야 하며 그 미만 버전은 채널포함 x
+* android 8.0 이상 부터는 무조건 알림을 채널에 포함해야 하며 그 미만 버전은 채널포함 x
 
 ```kotlin
 class MyFirebaseCloudmessaingService: FirebaseMessagingService(){
@@ -113,7 +113,7 @@ class MyFirebaseCloudmessaingService: FirebaseMessagingService(){
 
 <br>
 
-6. 알림 타입 Enum Class를 생성
+* 알림 타입 Enum Class를 생성
 
 ```kotlin
 enum class NotificationType(val title:String, val id:Int){
@@ -125,7 +125,7 @@ enum class NotificationType(val title:String, val id:Int){
 
 <br>
 
-7. createNotification() 함수 생성
+* createNotification() 함수 생성
 
 ```kotlin
 // MyFirebaseCloudmessaingService 내부 함수 생성
@@ -170,7 +170,7 @@ NotificationManagerCompat.from(this)
 
 <br>
 
-8. 메인 엑티비티에 알림 받는 기능 추가
+* 메인 엑티비티에 알림 받는 기능 추가
 
 ```kotlin
 override fun onNewIntent(intent:Intent?){
