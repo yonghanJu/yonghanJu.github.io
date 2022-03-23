@@ -1,0 +1,123 @@
+---
+layout: post
+title:  AutoTextComplete, TextWatcher, TextInputEditText(Material Design)
+date:   2022-03-23 00:49:00 +0900
+categories:   Codelab
+---
+
+# AutoTextComplete, MutiAutoTextComplete 
+
+<br>
+
+AutoTextComplete, MutiAutoTextComplete 사용 예시 (EditText에 문자 입력시 자동완성 기능)
+
+<br>
+
+```kotlin
+private fun initLayout() {
+    val adapter = ArrayAdapter<String>(
+        this,   // context
+        android.R.layout.simple_dropdown_item_1line, // 안드로이드 기본 제공 layout
+        countries // List<String>
+    )
+
+    val autoCompleteTextView = findViewById<AutoCompleteTextView>(R.id.autoCompleteTextView)
+    val multiAutoCompleteTextView = findViewById<MultiAutoCompleteTextView>(R.id.multiAutoCompleteTextView)
+
+    autoCompleteTextView.setAdapter(adapter)
+    autoCompleteTextView.setOnItemClickListener { adapterView, view, i, l ->
+        val msg = adapterView.getItemAtPosition(i).toString()
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+    }
+
+    val items = resources.getStringArray(R.array.countries_array)
+    val adapter2 = ArrayAdapter<String>(
+        this,
+        android.R.layout.simple_dropdown_item_1line,
+        items
+    )
+    multiAutoCompleteTextView.setAdapter(adapter)
+    multiAutoCompleteTextView.setTokenizer(MultiAutoCompleteTextView.CommaTokenizer()) // 콤마를 통해 여러개 구분 검색
+}
+
+```
+
+<br>
+
+# TextWatcher
+
+<br>
+
+TextWatcher 예시(텍스트가 변경을 감지하고 반응하는 리스터 인터페이스)
+
+<br>
+
+```kotlin
+editText.addTextChangedListener {
+    val str = it.toString()
+    button.isEnabled = str.isNotEmpty()
+}
+```
+
+<Br>
+
+# TextInputEditText 
+
+<br>
+
+Material 디자인이 적용된 EditText이며 상위 레이아웃으로 TextInputLayout을 갖는다.
+
+Material 디자인 채택시 EditText의 글자수 제한 경고, 비밀번호 보기 버튼 등의 기능을 구현할 수 있다.
+
+<br>
+
+```xml
+<!--상위 레이아웃이 감싸져있음-->
+<!--counterEnabled: 글자수 세기, counterMaxLength:최대 글자수, passwordToggleEnabled: 비밀번호 보기 토글-->
+<com.google.android.material.textfield.TextInputLayout
+    android:id="@+id/textInputLayout2"
+    android:layout_width="300dp"
+    android:layout_height="50dp"
+    android:layout_marginTop="90dp"
+
+    app:counterEnabled="true"
+    app:counterMaxLength="15"
+    app:passwordToggleEnabled="true"
+
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/textInputLayout">
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/passwordText"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:hint="비밀번호"
+        android:inputType="textPassword" />
+</com.google.android.material.textfield.TextInputLayout>
+```
+
+<br>
+
+# editText 안의 text의 이메일 형식을 정규식으로 확인
+
+<br>
+
+```kotlin
+    private fun initLayout() {
+        val textInputLayout = findViewById<TextInputLayout>(R.id.textInputLayout)
+        val emailText = findViewById<TextInputEditText>(R.id.emailText)
+
+        // 이메일 형식이 올바르지 않을 경우 경고 메세지를 띄운다.
+        // ^ : 시작, $: 끝, .: 아무 문자, +: 한 개 이상
+        val regex = "^(.+)@(.+)$".toRegex()
+        emailText.addTextChangedListener{
+            if(it.toString().matches(regex)){
+                textInputLayout.error = null
+            }else{
+                textInputLayout.error = "이메일 형식이 올바르지 않습니다."
+            }
+        }
+    }
+```
+
