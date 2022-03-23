@@ -13,6 +13,9 @@ categories:   Codelab
 <br>
 
 2. Swiperefreshlayout xml 추가
+
+<br>
+
 ```xml
 <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
     ...>
