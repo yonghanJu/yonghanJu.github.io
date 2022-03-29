@@ -1,0 +1,97 @@
+---
+layout: post
+title:  액션바 메뉴(onCreateOptionsMenu(), onOptionsItemSelected())
+date:   2022-03-29 21:54:00 +0900
+categories:   Codelab
+---
+
+# 액션바 메뉴 만들기
+
+<br>
+
+이번에는 간단하게 __RecyeclerView의 LayoutManager__ 를 메뉴를 통해 변경하는 실습을 진행
+
+<br>
+
+* 메뉴 res 파일 만들기
+
+    - res -> New -> Andriod Resource File -> Resource Type: Menu
+
+<br>
+
+* 메뉴 xml 파일에 아이탬 추가
+
+<Br>
+
+``menu1.xml``
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/menuItem1"
+        android:title="Linear"/>
+    <item
+        android:id="@+id/menuItem2"
+        android:title="Grid"/>
+    <item
+        android:id="@+id/menuItem3"
+        android:title="StaggeredGrid"/>
+</menu>
+```
+
+<br>
+
+app namespace를 선언해주고 app:showAsAction="always" 설정시 액션바에 항상 아이탬이 보여지게할 수 있음
+```xml
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    ...
+
+    <item
+        ...
+        app:showAsAction="always"/>
+        
+</menu>
+```
+
+<br>
+
+* onCreateOptionsMenu() 함수 오버라이딩
+
+<br>
+
+onCreateOptionsMenu() 함수를 오버라이딩 해서 위에서 만들었던 ``menu1.xml``파일을 띄워주자
+
+
+```kotlin
+override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    menuInflater.inflate(R.menu.menu1, menu)
+    return true
+    //return super.onCreateOptionsMenu(menu)
+}
+```
+
+<br>
+
+* onOptionsItemSelected() 함수 오버라이딩
+
+<br>
+
+onOptionsItemSelected() 함수를 오버라이딩해 메뉴 아이탬이 선택되면 recyclerView 스타일을 바꾸도록 하면 끝
+
+```kotlin
+override fun onOptionsItemSelected(item: MenuItem): Boolean {
+    when(item.itemId){
+        R.id.menuItem1-> recyclerView.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        R.id.menuItem2-> recyclerView.layoutManager = GridLayoutManager(this, 3)
+        R.id.menuItem3-> recyclerView.layoutManager = StaggeredGridLayoutManager(3, RecyclerView.VERTICAL)
+    }
+    return super.onOptionsItemSelected(item)
+}
+```
+
+<Br>
