@@ -36,8 +36,8 @@ categories:   Algorithm
 
 <br>
 
-```
-kotlin// 2022-03-15
+```kotlin
+// 2022-03-15
 // 2022-03-21
 // https://www.acmicpc.net/problem/2270
 
