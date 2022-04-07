@@ -1,0 +1,74 @@
+---
+layout: post
+title:  BackTacking 비숍 - BOJ_1799
+date:   2022-04-08 00:43:00 +0900
+categories:   Algorithm
+---
+
+# 비숍
+
+[비숍]
+
+[비숍]: https://www.acmicpc.net/problem/1799
+
+__N-Queen__ 과 유사 유형의 문제이다.
+
+처음에는 위 __N-Queen__ 과 같은 접근 방식으로 문제를 풀었지만 n이 9 이상만 되어도 수십분이 걸려 시간 초과가 발생했다.
+
+<br>
+
+질문 글들을 참고해서 푼 결과 알고리즘 자체는 비슷하지만 사고의 전환이 필요한 문제였다.
+
+모든 체스판을 전부 탐색하려면 2^(n*n)의 시간복잡도를 갖게되어 문제를 풀 수 없다.
+
+비숍의 움직임 특성상 체스판 위 White, Black 위에 각 놓여져 있는 비숍은 다른 색 위에 놓여진 비숍에 간섭할 수 없다.
+
+이점을 이용해 모든 체스판을 탐색하는게 아닌 검정, 흰색 체스판을 각각 한번씩 탐색해 문제를 풀 수 있었다.
+
+<br>
+
+```kotlin
+// 2022-04-07
+// https://www.acmicpc.net/problem/1799
+
+import java.io.*
+import java.util.*
+
+var answer = intArrayOf(0,0)
+var n = 0
+lateinit var isVisited: HashMap<Pair<Boolean,Int>,Boolean>
+lateinit var board:Array<IntArray>
+fun main():Unit = with(BufferedReader(InputStreamReader(System.`in`))) {
+    n = readLine().toInt()
+    board = Array(n){readLine().split(' ').map{it.toInt()}.toIntArray()}
+    isVisited = HashMap()
+
+    dfs(0,0,0,0)
+    dfs(0,1,0,1)
+    println(answer[0]+answer[1])
+}
+
+fun dfs(x:Int, y:Int,cnt:Int,w:Int){
+    var nx = x
+    var ny = y
+    if(ny>=n){
+        nx++
+        ny = (ny+1)%2
+    }
+    if(nx>=n){
+        answer[w] = maxOf(answer[w], cnt)
+        return
+    }
+
+    if(isVisited[Pair(false,nx-ny)] != true && isVisited[Pair(true, nx+ny)] != true && board[nx][ny]==1){
+        isVisited[Pair(false,nx-ny)] = true
+        isVisited[Pair(true,nx+ny)] = true
+        dfs(nx,ny+2,cnt+1,w)
+        isVisited[Pair(false,nx-ny)] = false
+        isVisited[Pair(true,nx+ny)] = false
+    }
+
+    dfs(nx,ny+2,cnt,w)
+}
+
+```
