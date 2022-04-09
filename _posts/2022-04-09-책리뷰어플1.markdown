@@ -1,0 +1,324 @@
+---
+layout: post
+title:  도서 리뷰 앱 Part 1(RecyclerView, ViewBinding, Retrofit, DiffUtil, OpenAPI)
+date:   2022-04-09 12:45:00 +0900
+categories:   Codelab
+---
+
+# 책 리뷰 어플 개발하기
+
+<br>
+
+* ReclyclerView 
+* View Binding
+* Retrofit
+* Gilde
+* Room Database
+* OpenAPI
+
+<br>
+
+# API test
+
+포스트만을 다운 받은 뒤 인터파크에서 베스트 셀러 정보, 책검색 정보를 받기위한 GET method 호출
+
+* 베스트 셀러
+
+요청 url : http://book.interpark.com/api/bestSeller.api 
+
+파라미터
+1. key: key, value: 인증키
+2. key: categoryId, value : 100(한국 작품 카테고리)
+3. key: output, value: json
+
+<br>
+
+* 책 검색
+
+요청 url : http://book.interpark.com/api/search.api 
+
+파라미터
+1. key: key, value: 인증키
+2. key: query, value : 검색 할 책 이름
+3. key: output, value: json
+
+<br>
+
+요청, 반환 확인
+
+![book1](/public/img/book1.png)
+
+<br>
+<br>
+
+
+# Retrofit
+
+위에서 사용했던 RestAPI http 프로토콜 통신을 Android 앱에서 할 수 있게 지원해주는 라이브러리이다.
+
+* dependcy 추가
+
+[Retrofit 공식문서]를 참고해 dependcy를 추가해보자
+
+[Retrofit 공식문서]: https://square.github.io/retrofit/
+
+
+<Br>
+
+레트로핏 사용을 위해 아래 줄 추가
+
+``implementation 'com.squareup.retrofit2:retrofit:2.9.0'``
+
+레트로핏에서 지원해주는 gson 컨버터 라이브러리 추가
+
+``implementation 'com.squareup.retrofit2:converter-gson:2.9.0'``
+
+__Json(Javascript Object Notation)__ 은 직렬화된 데이터를 받아오기 때문에 안드로이드에서 사용하기 위해 구글의 __Gson__ 으로 직렬화된 json 데이터를 오브젝트로 변환해줘야함
+
+<Br>
+
+* 인터넷 퍼미션 추가
+
+``Manifest.xml`` 파일에 인터넷 사용권한을 추가해야함(http 통신)
+
+``<uses-permission android:name="android.permission.INTERNET"/>``
+
+<br>
+
+* model package 생성, Book Model, Dto 생성
+
+위 Postman 에서 보았던 GET호출의 반환 값 중 받아올 데이터의 Dto, Model 클래스를 생성
+
+<Br>
+
+```kotlin
+package com.jyh.bookreview.model
+
+import com.google.gson.annotations.SerializedName
+
+// 베스트 셀러 호출 반환값을 받아옴
+data class BestSellerDTO (
+    @SerializedName("title") val title:String,
+    @SerializedName("item") val books:List<Book>
+)
+```
+
+<br>
+
+```kotlin
+package com.jyh.bookreview.model
+
+import com.google.gson.annotations.SerializedName
+
+// 이름 검색 호출 반환값을 받아옴
+data class SearchBookDTO (
+    @SerializedName("title") val title:String,
+    @SerializedName("item") val books:List<Book>
+)
+```
+
+<Br>
+
+
+```kotlin
+package com.jyh.bookreview.model
+
+import com.google.gson.annotations.SerializedName
+
+// 위 호출들의 반환값 중 북 리스트의 북 모델
+data class Book(
+    @SerializedName("itemId")val id:Long,
+    @SerializedName("title")val title:String,
+    @SerializedName("description")val description:String,
+    @SerializedName("coverSmallUrl")val coverSmallUrl:String
+)
+```
+
+<br>
+
+* Retrofit 객체 생성
+
+MainActivity 의 onCreate 밑에 initRetrofit() 생성
+
+```kotlin
+private fun initRetrofit() {
+    // 레트로핏 객체 생성  패턴
+    val retrofit = Retrofit.Builder()
+        .baseUrl("https://book.interpark.com")
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    // 서비스 생성
+    val bookService = retrofit.create(BookService::class.java )
+    
+    // 서비스 중 베스트 셀러 호출
+    bookService.getBestSeller("인증키")
+        .enqueue(object: Callback<BestSellerDTO>{
+
+            override fun onResponse(
+                call: Call<BestSellerDTO>,
+                response: Response<BestSellerDTO>
+            ) {
+                // 호출 실패 경우 반환
+                if(response.isSuccessful.not()) {
+                    return
+                }
+                
+                // 호출 성공시 행동, response.body(): BestSellerDTO
+                response.body()?.let{ it:BestSellerDTO->
+
+                    // 로그 찍기
+                    Log.d(TAG,it.toString())
+                    it.books.forEach{ book->
+                        Log.d(TAG,book.toString())
+                    }
+
+                    // 리사이클러뷰 어뎁터 구현, 생성 후 추가
+                    // adapter.submitList(it.books)
+                }
+            }
+
+             override fun onFailure(call: Call<BestSellerDTO>, t: Throwable) {
+                Log.e(TAG,t.toString())
+            }
+
+        }
+    )
+```
+
+<br>
+
+* 리사이클러뷰 어뎁터 구현 
+
+adapter 패키지를 생성하고 그 밑에 ``ListAdapter`` 상속받아 ``BookAdapter``를 생성한다.
+
+어뎁터에 따로 리스트를 받지 않아도 ``currentList`` 멤버에 저장되어있다.
+
+현재는 bind() 기능을 기본적으로 책 이름만 표시하지만 내용과 썸네일을 추가하자.
+
+<br>
+
+__리사이클러뷰와 스크롤뷰의 차이__
+
+    스크롤뷰의 경우 미리 전체 스크롤을 그린다.
+    스크롤이 매우 길어질 경우 앱이 죽거나 느려질 수 있다.
+    리사이클러뷰는 화면에 들어오는 리스트만 그린다.
+
+<Br>
+
+
+``BookAdapter``
+```kotlin
+package com.jyh.bookreview.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.jyh.bookreview.databinding.ItemBookBinding
+import com.jyh.bookreview.model.Book
+
+// 상속 클래스 타입 인자로 리스트에 들어각 model, 생성 어뎁터의 ViewHolder, 인자로 diffUtil 객체를 받는다.
+class BookAdapter:ListAdapter<Book, BookAdapter.BookItemViewHolder>(diffUtil){
+
+    // 내부 클래스로 ViewHolder 생성, 인자로 레이아웃 바인딩 객체를 받음 (레이아웃 생성시 자동으로 클래스가 만들어짐)
+    inner class BookItemViewHolder(private val binding: ItemBookBinding) :RecyclerView.ViewHolder(binding.root) {
+        // 바인드 함수 생성
+        fun bind(bookModel:Book){
+            binding.titleTextView.text = bookModel.title
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookItemViewHolder {
+        // BookItemViewHolder를 반환
+        // ItemBookBinding.inflate()을 통해 binding 생성
+        // LayoutInflater.from(parent.context) 를 통해 parent:ViewGroup 의 context 사용
+        return BookItemViewHolder(ItemBookBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+    }
+
+    // viewHolder의 bind() 함수 호출 
+    override fun onBindViewHolder(holder: BookItemViewHolder, position: Int) {
+        holder.bind(currentList[position])
+    }
+
+    // DiffUtil 객체를 생성, 리스트 속 객체가 같은지 구분하는 함수를 구현
+    companion object{
+        val diffUtil = object: DiffUtil.ItemCallback<Book>(){
+            override fun areItemsTheSame(oldItem: Book, newItem: Book): Boolean {
+                return oldItem==newItem
+            }
+
+            override fun areContentsTheSame(oldItem: Book, newItem: Book): Boolean {
+                return oldItem.id == newItem.id
+            }
+
+        }
+    }
+}
+```
+
+<br>
+
+- 1. viewbinding 사용
+
+    MainActivity에 binding 객체를 선언
+
+```koltlin
+...
+lateinit var binding:ActivityMainBinding
+...
+    binding = ActivityMainBinding.inflate(layoutInflater)
+    setContentView(binding.root)
+...
+```
+
+<Br>
+
+- 2. 레이아웃 생성 
+
+레이아웃 생성 시
+
+레이아웃파일 이름 -> camel Case+Binding 클래스가 자동으로 생성됨.
+
+위 리사이클러뷰 어뎁터 구현에서 사용된 ``ItemBookBinding`` 클래스는 자동으로 생성된 클래스
+
+``item_book.xml``
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/titleTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+
+<br>
+
+* MainActicity에서 RecyclerView 구현
+
+```kotlin
+...
+lateinit var adapter:BookAdapter
+...
+initBookRecyclerView()
+...
+private fun initBookRecyclerView() {
+    adapter = BookAdapter()
+    binding.bookRecyclerView.adapter = adapter
+    binding.bookRecyclerView.layoutManager = LinearLayoutManager(this)
+}
+```
+
+
