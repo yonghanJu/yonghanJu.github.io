@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  BackTacking 비숍 - BOJ_1799
-date:   2022-04-08 00:43:00 +0900
+date:   2022-04-08 17:43:00 +0900
 categories:   Algorithm
 ---
 
