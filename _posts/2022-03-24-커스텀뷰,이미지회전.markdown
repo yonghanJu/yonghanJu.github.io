@@ -13,7 +13,7 @@ CustomView를 사용해서 노래 볼륨을 조절하는 회전식 버튼을 만
 
 이번에 만들어볼 커스텀 뷰는 커스텀 이미지 뷰이다.
 
-1. 우선 __AppCompatImageView__ 를 상속받는 코틀린 클래스를 만들자.
+* 우선 __AppCompatImageView__ 를 상속받는 코틀린 클래스를 만들자.
 
 <br>
 
@@ -70,7 +70,7 @@ class VolumeControlView(context: Context, attr: AttributeSet?) : AppCompatImageV
 
 <br>
 
-2. 커스텀 이미지 뷰 클래스를 잘 작동했다면 xml에서 만들었던 커스텀 뷰를 사용해보자.
+* 커스텀 이미지 뷰 클래스를 잘 작동했다면 xml에서 만들었던 커스텀 뷰를 사용해보자.
 
 <br>
 
@@ -135,7 +135,7 @@ class VolumeControlView(context: Context, attr: AttributeSet?) : AppCompatImageV
 
 <br>
 
-3. 메인 엑티비티를 작성해 버튼의 각도로 음악 볼륨을 조절할 수 있게 만들어보자.
+* 메인 엑티비티를 작성해 버튼의 각도로 음악 볼륨을 조절할 수 있게 만들어보자.
 
 <br>
 
