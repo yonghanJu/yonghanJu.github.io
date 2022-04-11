@@ -66,6 +66,7 @@ private fun showPermissionContextPopup(){
     }
     .setNegativeButton("취소하기"){ _, _ -> }
     .create()
+    .show()
 }
 ```
 
