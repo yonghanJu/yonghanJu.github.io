@@ -19,7 +19,7 @@ categories:   Codelab
 
 <br>
 
-1. 권한 요청 코드 작성
+* 권한 요청 코드 작성
 
 ```kotlin
 //권한 요청하기 코드
@@ -50,7 +50,7 @@ when{
 <br><Br>
 
 
-2. 권한 거부시 교육용 팝업 설정
+* 권한 거부시 교육용 팝업 설정
 
 
 ```kotlin
@@ -70,7 +70,7 @@ private fun showPermissionContextPopup(){
 
 <br><br>
 
-3. 권한 허용시 즉시 동작 설정
+* 권한 허용시 즉시 동작 설정
 
 ```kotlin
 override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray){
@@ -93,7 +93,7 @@ override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out
 
 <br><br>
 
-4. Manifest에 권한 선언하기
+* Manifest에 권한 선언하기
 
 ```xml
 <uses-permission android:name="android.Manifest.permission.READ_EXTERNAL_STORAGE"/>
@@ -104,7 +104,7 @@ override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out
 
 <br><br>
 
-5. SAF(Storage Access Framework) 사용, 엑티비티 시작
+* SAF(Storage Access Framework) 사용, 엑티비티 시작
 
 ```kotlin
 private fun todo(){
@@ -116,7 +116,7 @@ private fun todo(){
 
 <br><br>
 
-65. intent activity 결과(사진) 받아오기
+* intent activity 결과(사진) 받아오기
 
 ```kotlin
 override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?){
