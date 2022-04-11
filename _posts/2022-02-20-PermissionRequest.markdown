@@ -25,22 +25,23 @@ categories:   Codelab
 //권한 요청하기 코드
 when{
 
-    // 바로 실행 권한 작업 실행
+    // 1. 권한이 허용되어있는 경우
     ContextCompat.checkSelfPermission(
         this,
         Manifest.permission.READ_EXTERNAL_STORAGE
     ) == PackageManager.PERMISSION_GRANTED ->{
-        // 권한 사용 가능
-        //todo()
+        TODO()
     }
 
-    // 해당 권한이 필요한 경우 팝업 띄우기
+    // 2. 해당 권한이 거부 된 경우
     ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE) ->{
     // 교육용 팝업을 띄운 후 권한 요청
     //showPermissionContextPopup() // 직접 팝업을 생성
     }
-    // 권한 요청하기
+
+    // 3. 앱을 처음 실행한 경우
     else ->{
+    // 권한 요청하기
         ActivityCompat.requestPermissions(this,arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),1000) // 1000 코드 기억
     }
 }
@@ -54,7 +55,7 @@ when{
 
 
 ```kotlin
-// 위 when 절에서 사용된 함수, AlertDialog 생성
+// 위 when 절의 2번에서 사용된 교육용 팝업 함수
 private fun showPermissionContextPopup(){
     AlertDialog.Builder(this:Context)
     .setTitle("권한 요청")
@@ -70,17 +71,18 @@ private fun showPermissionContextPopup(){
 
 <br><br>
 
-* 권한 허용시 즉시 동작 설정
+* 권한 요청 후 자동으로 호출되는 콜백 함수
 
 ```kotlin
 override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray){
     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
     when(requestCode){
+        // 위 권한요청에 사용된 요청코드(SAF권한 요청 코드)
         1000 -> {
             if(grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 // 권한이 부여되었음, 기능 동작
-                todo()
+                TODO()
             }
         }
         else -> { 
@@ -106,6 +108,8 @@ override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out
 
 * SAF(Storage Access Framework) 사용, 엑티비티 시작
 
+__startActivityForResult(intent, code)__ 함수를 사용해 엑티비티 실행의 후 콜백 함수(__onActivityResult__) 호출
+
 ```kotlin
 private fun todo(){
     val intent = Intent(Intent.Action_GET_CONTENT) // 컨텐트 가져오기
@@ -116,7 +120,7 @@ private fun todo(){
 
 <br><br>
 
-* intent activity 결과(사진) 받아오기
+* intent activity 결과(사진) 받아오기, 엑티비티 실행 후 자동 호출 콜백 함수
 
 ```kotlin
 override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?){
