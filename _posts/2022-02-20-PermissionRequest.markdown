@@ -120,6 +120,7 @@ private fun todo(){
     // startActivityForResult(intent, 2000)    // 예전 방식입니다. 
     
     // 최신화, activityResultLauncher 객체 생성은 아래에서 나옴
+    setResult(Activity.RESULT_OK,intent)
     activityResultLauncher.launcher(intent)
 }
 ```
