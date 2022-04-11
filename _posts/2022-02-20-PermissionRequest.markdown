@@ -115,13 +115,18 @@ __startActivityForResult(intent, code)__ 함수를 사용해 엑티비티 실행
 private fun todo(){
     val intent = Intent(Intent.Action_GET_CONTENT) // 컨텐트 가져오기
     intent.type = "image/*"
-    startActivityForResult(intent, 2000)    // 결과 받아오는데 사용
+
+    // 결과 받아오는데 사용
+    // startActivityForResult(intent, 2000)    // 예전 방식입니다. 
+    
+    // 최신화, activityResultLauncher 객체 생성은 아래에서 나옴
+    activityResultLauncher.launcher(intent)
 }
 ```
 
 <br><br>
 
-* intent activity 결과(사진) 받아오기, 엑티비티 실행 후 자동 호출 콜백 함수
+* ~~intent activity 결과(사진) 받아오기, 엑티비티 실행 후 자동 호출 콜백 함수~~ 예전 방식입니다. 아래 최신화 있음
 
 ```kotlin
 override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?){
@@ -143,5 +148,28 @@ override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?){
         }
         else -> { }
     }
+}
+```
+
+<br>
+
+* Activity 결과 받아오기
+
+__activityResultLauncher__ 객체 생성 후 __startActivityForResult()__ 대신 __launcher()__ 사용!
+
+```kotlin
+private val activityResultLauncher = registerForActivityResult(
+    ActivityResultContracts.StartActivityForResult()
+){
+    if(it.resultCode == RESULT_OK){ it:ActivityResult! ->
+        val selectedImageUri:Uri? = it.data?data
+        if(selectedImageUri != null){
+            // ImageView
+        imageView.set.setImageUri(selectedImageUri)
+        }else{
+        // 사진 가져오기 실패
+        }
+    }
+    else -> { }
 }
 ```
