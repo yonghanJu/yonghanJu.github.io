@@ -26,7 +26,7 @@ categories:   Codelab
 when{
 
     // 1. 권한이 허용되어있는 경우
-    ContextCompat.checkSelfPermission(
+    ActivityCompat.checkSelfPermission(
         this,
         Manifest.permission.READ_EXTERNAL_STORAGE
     ) == PackageManager.PERMISSION_GRANTED ->{
