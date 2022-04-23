@@ -1,0 +1,107 @@
+---
+layout: post
+title:  도서 리뷰 앱 Part 2(Gilde, EditText.setOnKeyListener)
+date:   2022-04-24 00:32:00 +0900
+categories:   Codelab
+---
+
+
+# Gilde 사용하기
+
+- 라이브러리 추가하기
+
+```kotlin
+    // Gilde
+    implementation 'com.github.bumptech.glide:glide:4.13.0'
+```
+
+<br>
+
+- 이미지 로딩하기
+
+BookAdapter.kt의 바인딩 부분에 아래 코드 추가
+
+```kotlin
+Gilde
+    .with(binding.titleTextView.context) // Context 필요, View의 컨텍스트 사용
+    .load(bookModel.coverSmallUrl)       // url로 이미지 불러오기 
+    .into(binding.coverSmallImageView)   // 어디에 띄울지
+```
+
+<br>
+
+- http 허용
+
+매니페스트 파일에 추가, __https__ 는 암호화 통신, __http__ 는 평문 통신인데 평문 통신을 허용함(위 bookModel.coverSmallUrl 가 http 사용하기 때문) 
+
+```xml
+android:useCleartextTraffic = "true"
+```
+
+<br>
+<br>
+
+# 검색 기능 추가하기
+
+- EditText를 1줄로 제한
+
+```xml
+android:lines="1"
+```
+
+<br>
+
+- EditText.setOnKeyListener 설정(에딧 텍스트의 키가 눌렸을 때)
+
+```kotlin
+binding.searchEditText.setOnKeyListener { v, keyCode, event ->
+            if(keyCode == KeyEvent.KEYCODE_ENTER && event.action==KeyEvent.ACTION_DOWN){ // 엔터가 눌리면
+                search(binding.)
+                return@setOnKeyListener true
+            }
+            return@setOnKeyListener false
+        }
+```
+
+<Br>
+
+- 책 검색 api 사용 함수 정의(search())
+
+```kotlin
+    private fun search(keyword:String){
+        // api키는 res 파일에 정의했음
+        bookService.getBooksByName(getString(R.string.interparkAPIKey), keyword)
+            .enqueue(object: Callback<SearchBookDTO>{
+
+                override fun onResponse(
+                    call: Call<SearchBookDTO>,
+                    response: Response<SearchBookDTO>
+                ) {
+                    if(response.isSuccessful.not()) {
+                        return
+                    }
+                    response.body()?.let{
+                        adapter. (it.books)
+                    }
+                }
+
+                override fun onFailure(call: Call<SearchBookDTO>, t: Throwable) {
+                    Log.e(TAG,t.toString())
+                }
+
+            })
+    }
+```
+
+<Br>
+
+# 텍스트 줄 개수 제한, ... 붙이기
+
+```xml
+<!--1줄 이상이면 ... 붙이기-->
+android:lines="1"
+android:ellipsize="end"
+
+<!--최대 3줄-->
+android:maxLines="3"
+```
