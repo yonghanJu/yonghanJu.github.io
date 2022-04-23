@@ -1,0 +1,492 @@
+---
+layout: post
+title:  도서 리뷰 앱 Part 3(Room Database)
+date:   2022-04-24 02:07:00 +0900
+categories:   Codelab
+---
+
+# Room 사용하기
+
+- 라이브러리 추가하기
+
+```kotlin
+    // plugins
+    id 'kotlin-kapt'
+
+    // dependencies
+    kapt 'androidx.room:room-compiler:2.4.2'
+    implementation 'androidx.room:room-runtime:2.4.2'
+```
+
+<br>
+
+- 검색 기록 모델 만들기
+
+model 생성
+
+```kotlin
+// History.kt
+@Entity
+data class History(
+    @PrimaryKey val uid:Int?,
+    @ColumnInfo(name = "keyword") val keyword:String?
+):Serializable
+```
+<br>
+
+- Dao 생성
+
+dao 패키지를 생성, 그 아래에 파일 생성
+
+```kotlin
+// HistoryDao.kt
+@Dao
+interface HistoryDao {
+
+    @Query("SELECT * FROM history")
+    fun getAll() : List<History>
+
+    @Insert
+    fun insertHistory(history:History)
+
+    @Query("DELETE FROM history WHERE keyword==:keyword")
+    fun delete(keyword:String)
+}
+```
+
+<br>
+
+- Database 생성
+
+```kotlin
+// AppDatabase.kt
+@Database(entities = [History::class], version =1)
+abstract class AppDatabase:RoomDatabase() {
+    abstract fun historyDao() : HistoryDao
+}
+```
+
+<Br>
+
+- 메인 엑티비티에서 디비 생성
+
+```kotlin
+lateinit var db: AppDatabase
+
+...
+
+initDB()
+
+...
+
+    private fun initDB() {
+        db = Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java,
+            "BookSearchDB"
+        ).build()
+    }
+
+    private fun saveSearchKeyword(keyword:String) {
+        Thread{
+            db.historyDao().insertHistory(History(null, keyword))
+        }.start()
+    }
+```
+
+<br>
+<Br>
+
+* 검색 기록 리사이클러뷰 생성
+
+``tools:listitem = "@layout/id"`` 사용 시 리스트가 자동으로 채워짐!
+
+평소에 잘 사용해보자
+
+```xml
+    <!--activity_main.xml 맨 아래(기존 리사이클러뷰 보다 위에 보이도록, 배경을 흰색 지정)-->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/historyRecyclerView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/white"
+        android:visibility="gone" 
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/searchEditText"/>
+```
+
+<br>
+
+```xml
+<!--item_hstory.xml-->
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/historyTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginStart="16dp"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/historyDeleteButton"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_marginEnd="16dp"
+        android:src="@drawable/ic_baseline_clear_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+
+<Br>
+<br>
+
+* 히스토르 어뎁터 구현
+
+
+```kotlin
+// 삭제 버튼 구현을 위해서 람다 함수를 변수로 받음
+class HistoryAdapter(val historyDeleteCLikedListener: (String) -> Unit):ListAdapter<History, HistoryAdapter.HistoryItemViewHolder>(diffUtil){
+
+    inner class HistoryItemViewHolder(private val binding: ItemHistroyBinding) :RecyclerView.ViewHolder(binding.root) {
+        fun bind(historyModel:History){
+            binding.historyTextView.text = historyModel.keyword
+
+            binding.historyDeleteButton.setOnClickListener{
+                historyDeleteCLikedListener(historyModel.keyword.orEmpty())
+            }
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryItemViewHolder {
+        return HistoryItemViewHolder(ItemHistroyBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+    }
+
+    override fun onBindViewHolder(holder: HistoryItemViewHolder, position: Int) {
+        holder.bind(currentList[position])
+    }
+
+    companion object{
+        val diffUtil = object: DiffUtil.ItemCallback<History>(){
+            override fun areItemsTheSame(oldItem: History, newItem: History): Boolean {
+                return oldItem==newItem
+            }
+
+            override fun areContentsTheSame(oldItem: History, newItem: History): Boolean {
+                return oldItem.keyword == newItem.keyword   
+            }
+
+        }
+    }
+}
+```
+
+<Br>
+
+* 메인 엑티비티에서 히스토리 리사이클러뷰 구현
+
+```kotlin
+    private fun showHistoryView() {
+        Thread {
+            val keywords = db.historyDao().getAll().reversed()
+            runOnUiThread {
+                binding.historyRecyclerView.visibility = View.VISIBLE
+                historyAdapter.submitList(keywords)
+            }
+        }.start()
+    }
+
+    private fun hideHistoryView() {
+        binding.historyRecyclerView.visibility = View.GONE
+    }
+```
+
+
+
+
+- http 허용
+
+매니페스트 파일에 추가, __https__ 는 암호화 통신, __http__ 는 평문 통신인데 평문 통신을 허용함(위 bookModel.coverSmallUrl 가 http 사용하기 때문) 
+
+```xml
+android:useCleartextTraffic = "true"
+```
+
+<br>
+<br>
+
+# 검색 기능 추가하기
+
+- EditText를 1줄로 제한
+
+```xml
+android:lines="1"
+```
+
+<br>
+
+- EditText.setOnKeyListener 설정(에딧 텍스트의 키가 눌렸을 때)
+
+```kotlin
+        binding.searchEditText.setOnKeyListener { v, keyCode, event ->
+            if(keyCode == KeyEvent.KEYCODE_ENTER && event.action==KeyEvent.ACTION_DOWN){ // 엔터가 눌리면
+                search(binding.)
+                return@setOnKeyListener true
+            }
+            return@setOnKeyListener false
+        }
+```
+
+<Br>
+
+- 책 검색 api 사용 함수 정의(search())
+
+```kotlin
+    private fun search(keyword: String) {
+        bookService.getBooksByName(getString(R.string.interparkAPIKey), keyword)
+            .enqueue(object : Callback<SearchBookDTO> {
+
+                override fun onResponse(
+                    call: Call<SearchBookDTO>,
+                    response: Response<SearchBookDTO>
+                ) {
+
+                    // 아래 두함수는 곧 정의
+                    saveSearchKeyword(keyword)  // 히스토리 저장하기
+                    if (response.isSuccessful.not()) {
+                        return
+                    }
+                    response.body()?.let {
+                        adapter.submitList(it.books)
+                    }
+                }
+
+                override fun onFailure(call: Call<SearchBookDTO>, t: Throwable) {
+                    Log.e(TAG, t.toString())
+                    // 밑에서 구현
+                    hideHistoryView()
+                }
+
+            })
+    }
+```
+
+<Br>
+
+# 히스토리 어뎁터 사용
+
+```kotlin
+    lateinit var historyAdapter: HistoryAdapter
+
+    ...
+    
+    initHistoryRecyclerView()
+    initSearchEditText()
+    
+    ...
+
+    private fun initHistoryRecyclerView() {
+        historyAdapter = HistoryAdapter { deleteSearchKeyword(it) }
+        binding.historyRecyclerView.adapter = historyAdapter
+        binding.historyRecyclerView.layoutManager = LinearLayoutManager(this)
+    }
+
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun initSearchEditText() {
+        // 키 이벤트 KeyEvent = 타자
+        binding.searchEditText.setOnKeyListener { v, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) { // 엔터가 눌리면
+                val keyword = (v as EditText).text.toString()
+                search(keyword)
+                saveSearchKeyword(keyword)
+                return@setOnKeyListener true
+            }
+            return@setOnKeyListener false
+        }
+
+        // 모션 이벤트 MotionEvent = 터치
+        binding.searchEditText.setOnTouchListener { v, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                showHistoryView()
+            }
+            return@setOnTouchListener false
+        }
+    }
+```
+
+<Br>
+<br>
+
+* 현재 전체 코드
+
+```kotlin
+class MainActivity : AppCompatActivity() {
+
+    //viewBinding 적용
+    lateinit var binding: ActivityMainBinding
+    lateinit var adapter: BookAdapter
+    lateinit var historyAdapter: HistoryAdapter
+    lateinit var bookService: BookService
+    lateinit var db: AppDatabase
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        initDB()
+        initSearchEditText()
+        initBookRecyclerView()
+        initHistoryRecyclerView()
+        initRetrofit()
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun initSearchEditText() {
+        // 키 이벤트 KeyEvent = 타자
+        binding.searchEditText.setOnKeyListener { v, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) { // 엔터가 눌리면
+                val keyword = (v as EditText).text.toString()
+                search(keyword)
+                saveSearchKeyword(keyword)
+                return@setOnKeyListener true
+            }
+            return@setOnKeyListener false
+        }
+
+        // 모션 이벤트 MotionEvent = 터치
+        binding.searchEditText.setOnTouchListener { v, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                showHistoryView()
+            }
+            return@setOnTouchListener false
+        }
+    }
+
+    private fun initHistoryRecyclerView() {
+        historyAdapter = HistoryAdapter { deleteSearchKeyword(it) }
+        binding.historyRecyclerView.adapter = historyAdapter
+        binding.historyRecyclerView.layoutManager = LinearLayoutManager(this)
+    }
+
+    private fun deleteSearchKeyword(keyword: String) {
+        Thread {
+            db.historyDao().delete(keyword)
+        }.start()
+        showHistoryView()
+    }
+
+    private fun initDB() {
+        db = Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java,
+            "BookSearchDB"
+        ).build()
+    }
+
+    private fun initBookRecyclerView() {
+        adapter = BookAdapter()
+        binding.bookRecyclerView.adapter = adapter
+        binding.bookRecyclerView.layoutManager = LinearLayoutManager(this)
+    }
+
+    private fun initRetrofit() {
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://book.interpark.com")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        bookService = retrofit.create(BookService::class.java)
+        bookService.getBestSeller(getString(R.string.interparkAPIKey))
+            .enqueue(object : Callback<BestSellerDTO> {
+
+                override fun onResponse(
+                    call: Call<BestSellerDTO>,
+                    response: Response<BestSellerDTO>
+                ) {
+                    if (response.isSuccessful.not()) {
+                        return
+                    }
+                    response.body()?.let {
+                        Log.d(TAG, it.toString())
+                        it.books.forEach { book ->
+                            Log.d(TAG, book.toString())
+                        }
+                        adapter.submitList(it.books)
+                    }
+                }
+
+                override fun onFailure(call: Call<BestSellerDTO>, t: Throwable) {
+                    Log.e(TAG, t.toString())
+                }
+
+            })
+    }
+
+    private fun saveSearchKeyword(keyword: String) {
+        Thread {
+            db.historyDao().insertHistory(History(null, keyword))
+        }.start()
+    }
+
+    private fun search(keyword: String) {
+        bookService.getBooksByName(getString(R.string.interparkAPIKey), keyword)
+            .enqueue(object : Callback<SearchBookDTO> {
+
+                override fun onResponse(
+                    call: Call<SearchBookDTO>,
+                    response: Response<SearchBookDTO>
+                ) {
+
+                    hideHistoryView()
+                    saveSearchKeyword(keyword)
+                    if (response.isSuccessful.not()) {
+                        return
+                    }
+                    response.body()?.let {
+                        adapter.submitList(it.books)
+                    }
+                }
+
+                override fun onFailure(call: Call<SearchBookDTO>, t: Throwable) {
+                    Log.e(TAG, t.toString())
+                    hideHistoryView()
+                }
+
+            })
+    }
+
+    private fun showHistoryView() {
+        Thread {
+            val keywords = db.historyDao().getAll().reversed()
+            runOnUiThread {
+                historyAdapter.submitList(keywords)
+            }
+        }.start()
+        binding.historyRecyclerView.isVisible=true
+    }
+
+    private fun hideHistoryView() {
+        binding.historyRecyclerView.isVisible=false
+    }
+
+    companion object {
+        const val TAG = "MainActivity"
+    }
+}
+```
