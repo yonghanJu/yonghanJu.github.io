@@ -7,7 +7,7 @@ permalink: /about/
 
 # Welcome to Yong's Dev Diary!
 
-<img align="left" width="200" height="200" src="https://github.com/yonghanJu/yonghanJu.github.io/blob/master/public/img/me.png">
+<img align="left" width="200" height="200" src="https://github.com/yonghanJu/yonghanJu.github.io/blob/master/public/img/me.png/200/200">
 
 <img src="/public/img/me.png"  width="300" height="300">
 
