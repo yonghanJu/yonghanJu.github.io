@@ -1,0 +1,44 @@
+---
+layout: post
+title:  데이터 베이스 마이그레이션 (버전 업그레이드)
+date:   2022-04-24 22:28:00 +0900
+categories:   Codelab
+---
+
+# 디비 생성 코드 선언
+
+이전 [북 리뷰 어플리케이션 실습]에서 사용한 코드를 통해 데이터 베이스 마이그레이션을 실습해보자.
+
+[북 리뷰 어플리케이션 실습]: https://yonghanju.github.io/codelab/2022/04/23/%EC%B1%85%EB%A6%AC%EB%B7%B0%EC%96%B4%ED%94%8C3.html
+
+데이터 베이스를 수정하게 되면 데이터 베이스 버전을 업데이트 시켜줘야 하며 마이그레이션 코드를 작성해줘야한다.
+
+이전 실습에서 사용했던 DB생성 코드를 __AppDatabase.kt__ 안에 __getAppDatabase()__ 함수로 정의 하고 마이그레이션 코드를 작성하자.
+
+
+```kotlin
+// AppDatabase.kt
+@Database(entities = [History::class, Review::class], version =2)
+abstract class AppDatabase:RoomDatabase() {
+    abstract fun historyDao() : HistoryDao
+    abstract fun reviewDao() : ReviewDao
+}
+
+fun getAppDatabase(context: Context):AppDatabase{
+
+    // 버전 1 -> 2 로 업데이트하는 마이그레이션 코드 작성하기
+    val migration_1_2 = object : Migration(1,2){
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL("CREATE TABLE 'REVIEW' ('id' INTEGER, 'review' TEXT" + " PRIMARY KEY ('id'))")
+        }
+
+    }
+
+    return Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "BookSearchDB"
+        ).addMigrations(migration_1_2)
+        .build()
+}
+```
