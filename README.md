@@ -31,7 +31,7 @@ permalink: /about/
 - (주)거버넌스휴먼 외주 개발
 
      - 안드로이드 위치 기반 자동 신고 모듈 개발
-- 제 15회 Tmax 공개SW 개발자 대회 장려상 [Article]
+- 제 15회 TmaxOS 공개SW 개발자 대회 장려상 [Article]
 
      - Calamares 오픈소스를 활용한 TmaxOS 인스톨러 모듈 개발
 
