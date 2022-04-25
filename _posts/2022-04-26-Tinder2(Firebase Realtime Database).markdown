@@ -73,6 +73,12 @@ LoginActiviy.kt에서 로그인 성공 시 호출하는 finish() 함수를 handl
 
 # LikeActivity.kt 구현
 
+__addListenerForSingleValueEvent()__ 함수를 통해 데이터를 1회 받아옴
+
+이름 정보가 없을 때 이름을 정하라고 팝업을 띄움
+
+EditText를 팝업으로 띄우기
+
 ```kotlin
 // LikeActivity.kt
 class LikeActivity : AppCompatActivity() {
@@ -88,6 +94,8 @@ class LikeActivity : AppCompatActivity() {
         usersDB = Firebase.database.reference.child("Users")
 
         val currentUserDB = usersDB.child(getCurrentUserId())
+
+        // 데이터를 1회 받아오고 onDataChange 실행
         currentUserDB.addListenerForSingleValueEvent(object :ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
                 if(snapshot.child("name").value == null){
@@ -104,6 +112,7 @@ class LikeActivity : AppCompatActivity() {
 
     }
 
+    // EditText를 팝업으로 띄우기
     private fun showNameInputPopup() {
         val editText = EditText(this)
 
