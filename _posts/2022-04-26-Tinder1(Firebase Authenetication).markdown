@@ -21,7 +21,7 @@ categories:   Codelab
 
 <img src="/public/img/snsauth1.png"  width="400" height="300">
 
-<img src="/public/img/snsauth0.png"  width="500" height="200">
+<img src="/public/img/snsauth.png"  width="500" height="200">
 
  라이브러리를 포함시키기 위해서 아래와 같은 코드들을 추가해야한다.
 
