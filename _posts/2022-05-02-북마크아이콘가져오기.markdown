@@ -1,0 +1,257 @@
+---
+layout: post
+title:  북마크 아이콘 가져오기 (Coroutines, Room, TypeConverter, Opensource)
+date:   2022-05-02 17:37:00 +0900
+categories:   Codelab
+---
+
+# 내용
+
+* Coroutines
+
+* Room
+
+* TypeConverter
+
+* Opensource [ohmae/touch-icon-extractor] (앱, 웹의 아이콘 정보 가져오기)
+
+[ohmae/touch-icon-extractor]: https://github.com/ohmae/touch-icon-extractor
+
+<br>
+
+북마크 링크들을 디렉터리 구조고 관리하고 외부로 공유 받기, 공유하기, 리마인더 받기 등 기능을 가진 앱을 만들고있다 __(학교 HCI 과목 앱 만들기 프로젝트)__
+
+<br>
+
+앱을 만드는 전체 과정을 담긴 어렵지만 기억에 남는 기능 구현 방법들을 정리하고자 한다.
+
+이번 실습에서는 저장된 링크가 연결된 앱이나 웹의 아이콘을 아래 사진과 같이 띄워주는 기능을 구현해보자.
+
+<br>
+
+매번 네트워킹 작업을 통해 아이콘을 가져오면(Gilde) 사용자 경험 저하하므로 룸 데이터베이스에 비트맵을 저장하는 방식으로 구현했다.
+
+<br>
+
+
+<img src="/public/img/starsaver0.png"  width="300" height="600">
+
+<Br>
+
+# 외부 라이브러리를 통해 아이콘 가져오기
+
+<br>
+
+* 의존성 프로젝트 추가
+
+    [ohmae/touch-icon-extractor] 참고
+
+    모듈 레벨에 의존성 프로젝트 추가
+
+```kotlin
+implementation("net.mm2d.touchicon:touchicon:$touchIconVersion")
+```
+
+* 링크를 통해 아이콘 정보 가져오기
+
+TouchIconExtractor 객체를 생성해 url을 통해 icon 정보를 가져올 수 있다.
+
+우리는 그 정보중 icon url값을 받아서 사용할 것이다.
+
+```kotlin
+// 링크를 추가하는 엑티비티 파일 중
+// 객체 생성
+val extractor = TouchIconExtractor()
+var url:String?= null
+var bitmap:Bitmap? = null
+
+// 백그라운드 실행
+GlobalScope.launch(Dispatchers.IO) {
+    
+    // fromPage 함수를 통해 정보 가져오기
+    // Deffered<List<Icon>> 타입을 반환
+    extractor.fromPage(link.link!!, true)
+        .let{ // 반환 성공시 it : List<Icon> 
+            if(it.isNotEmpty()) url = it.last().url
+        }
+
+    // url 값이 null이 아니면 비트맵 저장
+    if(url!=null){
+        bitmap = ImageDownloadManager.getImage(url!!)
+    }
+}
+```
+
+<br>
+
+* Url을 통해 비트맵을 생성케 하는 싱글톤 객체 생성 (위에서 사용 됨)
+
+```kotlin
+// ImageDownloadManager.kt
+object ImageDownloadManager {
+    @Synchronized
+    suspend fun getImage(url: String): Bitmap? = suspendCancellableCoroutine { continuation ->
+        val urlConnection = URL(url).openConnection() as HttpURLConnection
+        GlobalScope.launch(Dispatchers.IO) {
+            try {
+                if (urlConnection.responseCode == 200) {
+                    val stream = BufferedInputStream(urlConnection.inputStream)
+                    val bitmap = BitmapFactory.decodeStream(stream)
+                    continuation.resume(bitmap) {}
+                } else {
+                    continuation.resume(null) {}
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                urlConnection.disconnect()
+            }
+        }
+    }
+}
+```
+
+<br>
+
+# 룸 데이터 베이스에 Bitmap 저장 하기
+
+<br>
+
+* Converters 클래스 생성
+
+```kotlin
+class Converters {
+    @TypeConverter
+    fun toByteArray(bitmap : Bitmap?) : ByteArray?{
+        if(bitmap==null) return null
+        val outputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+        return outputStream.toByteArray()
+    }
+
+    @TypeConverter
+    fun toBitmap(bytes : ByteArray?) : Bitmap?{
+        if(bytes==null) return null
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    }
+}
+```
+
+<br>
+
+* 데이터베이스 클래스에 TypeConverters 어노테이션 추가
+
+```kotlin
+@Database(entities = [BookMark::class], version = 1, exportSchema = false)
+@TypeConverters(Converters::class)
+```
+
+<br>
+
+* Entity에 bitmap 맴버 추가
+
+```kotlin
+@Entity
+data class BookMark (
+    ...
+    var bitmap: Bitmap? = null
+):Serializable
+```
+
+<Br>
+
+모든 준비가 끝났다면 이제 Room 데이터베이스의 entity 안에 bitmap을 추가할 수 있다.
+
+<br>
+
+# 실제 사용 예제 코드
+
+<br>
+
+북마크 링크를 추가하는 ```AddLinkActivity``` 클래스 안에서 ```저장``` 버튼을 눌렀을 때의 기존 동작(아이콘을 bitmap으로 저장 X)은 아래와 같다
+
+```kotlin
+// AddLinkActivity.kt
+private fun save(link : BookMark){
+
+    // 데이터베이스에 추가
+    viewModel.addBookMark(link)
+
+    // 엑티비티 종료
+    finish()
+}
+```
+
+<br>
+
+위 함수를 아래와 같이 링크 정보로 아이콘을 저장하는 함수로 바꿔준다
+
+```kotlin
+    // AddLinkActivity.kt
+    private fun save(link:BookMark){
+
+        // TouchIconExtractor 객체 생성
+        val extractor = TouchIconExtractor()
+        var url:String?= null
+
+        // 백그라운드 실행
+        GlobalScope.launch(Dispatchers.IO) {
+
+            // icon url 가져오기
+            extractor.fromPage(link.link!!, true)
+                .let{
+                    if(it.isNotEmpty()) url = it.last().url
+            }
+
+            // icon url을 통해 bitmap 가져오기
+            if(url!=null){
+                link.bitmap = ImageDownloadManager.getImage(url!!)
+            }
+
+            // 데이터베이스에 추가
+            viewModel.addBookMark(link)
+
+            // 엑티비티 종료
+            finish()
+        }
+    }
+```
+
+<br>
+
+이제 룸 데이터베이스에서 사용하는 북마크 entity에 아이콘 bitmap을 저장했다.
+
+<br>
+
+# 리싸이클러뷰에 띄우기
+
+```kotlin
+// LinkAdapter.kt
+// 데이터 베이스에 저장된 링크 아이콘 띄우기
+binding.imageView.setImageBitmap(link.bitmap)
+```
+
+<br>
+
+# 정리
+
+사용자가 북마크 링크 입력
+
+->
+
+링크의 icon url을 가져오기 __[OpenSource, Coroutine]__
+
+-> 
+
+icon url을 통해 bitmap 생성 __[Coroutine]__
+
+->
+
+생성된 아이콘 비트맵을 데이터베이스에 저장 __[Room, TypeConverter]__
+
+
+<br>
+
+해당 기능을 만들면서 코루틴, 룸과 같이 jetpack 라이브러리를 학습할 수 있었고 오픈소스 활용에 친숙해 질 수 있었다.
+
+
