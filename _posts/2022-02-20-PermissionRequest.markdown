@@ -119,9 +119,14 @@ private fun todo(){
     // 결과 받아오는데 사용
     // startActivityForResult(intent, 2000)    // 예전 방식입니다. 
     
+    // A->B 로 인텐트를 시도 할 때 B 인텐트에서 실행할 코드
+    // 그대로 사용 가능( 앞으로 실행될 intent의 결과를 입력하는 함수)
+    // val resultIntent Intent(this,AActibity::class.java)
+    // setResult(Activity.RESULT_OK,resultIntent)
+    // setResult(Activity.RESULT_OK, resultIntent) 
+    
     // 최신화, activityResultLauncher 객체 생성은 아래에서 나옴
-    setResult(Activity.RESULT_OK,intent)
-    activityResultLauncher.launcher(intent)
+    activityResultLauncher.launch(intent)
 }
 ```
 
@@ -162,7 +167,7 @@ __activityResultLauncher__ 객체 생성 후 __startActivityForResult()__ 대신
 private val activityResultLauncher = registerForActivityResult(
     ActivityResultContracts.StartActivityForResult()
 ){
-    if(it.resultCode == RESULT_OK){ it:ActivityResult! ->
+    if(it.resultCode == RESULT_OK){ //it:ActivityResult! ->
         val selectedImageUri:Uri? = it.data?data
         if(selectedImageUri != null){
             // ImageView
