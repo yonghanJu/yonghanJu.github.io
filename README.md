@@ -20,11 +20,6 @@ permalink: /about/
 
 &nbsp;&nbsp;  안드로이드 개발자를 꿈꾸는 주용한입니다.
 
-
-&nbsp; &nbsp;  __Tech Stack__
-
-&nbsp; &nbsp; ![Kotlin](https://img.shields.io/badge/Kotlin-5F00FF) ![Java](https://img.shields.io/badge/Java-aabbcc) ![Android Studio](https://img.shields.io/badge/Android_Studio-43853d) ![AAC](https://img.shields.io/badge/AAC-FFE400) ![Jetpeck Compose](https://img.shields.io/badge/Jetpeck_Compose-0054FF) ![MVVM](https://img.shields.io/badge/MVVM-121212) ![CleanArchitecture](https://img.shields.io/badge/Clean_Architecture-1100FF) ![Room](https://img.shields.io/badge/Room-0054FF) ![Retrofit](https://img.shields.io/badge/Retrofit-43853d) 
-
 <BR>
 
 ## Experience
