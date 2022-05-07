@@ -20,7 +20,7 @@ permalink: /about/
 
 &nbsp;&nbsp;  안드로이드 개발자를 꿈꾸는 주용한입니다.
 
-<BR>
+<BR><BR>
 
 ## Experience
 
