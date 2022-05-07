@@ -37,7 +37,7 @@ permalink: /about/
      - Calamares 오픈소스를 활용한 TmaxOS 인스톨러 모듈 개발
 
 [![yonghanJu's github stats](https://github-readme-stats.vercel.app/api?username=yonghanJu&theme=algolia)](https://github.com/yonghanJu)
-![](https://github-readme-stats.vercel.app/api/top-langs/?username=yonghanJu&layout=compact&theme=algolia)
+[![Solved.ac Profile](http://mazassumnida.wtf/api/generate_badge?boj=ju990828)](https://solved.ac/ju990828)
 
 ![](https://raw.githubusercontent.com/yonghanJu/yonghanJu/output/github-contribution-grid-snake.svg)
 
