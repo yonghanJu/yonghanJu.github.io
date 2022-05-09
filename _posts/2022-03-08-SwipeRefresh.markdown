@@ -8,7 +8,13 @@ categories:   Codelab
 
 # 당겨서 새로고침 구현
 
-* Swiperefreshlayout 종속성 추가
+* Swiperefreshlayout 의존성 추가
+
+앱 수준의 build.gradle 파일에 의존성 프로젝트 추가
+
+```kotlin
+implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+```
 
 <br>
 
