@@ -1,0 +1,57 @@
+---
+layout: post
+title:  viewModels() vs viewModel()
+date:   2022-05-09 16:52:00 +0900
+categories:   Codelab
+---
+* Activity ViewModel을 활용해 프래그먼트간 통신
+
+엑티비티 안에서는 viewModels() 함수를 통해 뷰모델을 생성하거나 검색할 수 있다.
+
+activity-ktx, fragment-ktx 디펜던시를 추가해야함
+
+```kotlin
+    // Using the viewModels() Kotlin property delegate from the activity-ktx
+    // artifact to retrieve the ViewModel in the activity scope
+    private val viewModel: ItemViewModel by viewModels()
+```
+
+__해당 엑티비티 안에 붙어있는 프래그먼트의 경우__ activityViewModels() 함수를 사용해 부모 엑티비티의 뷰모델을 생성하거나 검색 할 수 있고 생선한 뷰모델로 프래그먼트간, 부모 엑티비티간 통신이 가능하다
+
+```kotlin    
+    private val viewModel: ItemViewModel by activityViewModels()
+```
+
+
+# Koin을 사용해 ViewModel을 생성 (viewModel(), sharedViewModel())
+
+의존성 프로젝트 모듈 단위 build.gradle에 추가
+
+```kotlin
+// koin viewmodel
+implementation 'org.koin:koin-androidx-viewmodel:2.2.2'
+```
+
+<br>
+
+객체 주입
+ 
+```kotlin
+// framgnet의 viewmodel 호출
+val mainViewModel: MainViewModel by viewModel()
+
+// activity의 viewmodel 호출 (shared viewmodel 구현)
+val mainViewModel: MainViewModel by sharedViewModel()
+```
+
+<br>
+
+
+# 자잘한 공부
+
+*  버튼 커스텀 안될 때 <android.widget.Button> 으로 바꾸기
+
+* viewBinding을 사용하면 findViewById 보다 성능이 좋고 type Safe 하다.
+
+* Fragment에서 viewBinding을 사용하면 view는 없지만 Fragment는 존재 가능, 즉 메모리 누수가 생긴다.
+    이를 막기위해 _binding 객체를 null로 지정해주고 onCreateView() 안에서 binding을 할당, onDestroyView() 에서 메모리 해제
