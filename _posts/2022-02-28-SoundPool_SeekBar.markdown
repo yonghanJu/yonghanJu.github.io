@@ -2,7 +2,7 @@
 layout: post
 title:  SoundPool, SeekBar, CountDownTimer
 date:   2022-02-28 19:12:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 
