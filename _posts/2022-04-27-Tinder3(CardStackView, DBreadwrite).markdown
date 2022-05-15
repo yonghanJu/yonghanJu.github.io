@@ -2,7 +2,7 @@
 layout: post
 title:  Tinder Clone Coding Part 3(Realtime DB read and write, CardStackView)
 date:   2022-04-27 01:33:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # Component
