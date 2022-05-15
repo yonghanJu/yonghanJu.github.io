@@ -2,7 +2,7 @@
 layout: post
 title:  Tinder Clone Coding Part 1(Firebase Authenetication)
 date:   2022-04-26 00:35:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # Component
