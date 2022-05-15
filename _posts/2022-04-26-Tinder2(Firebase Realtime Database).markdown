@@ -2,7 +2,7 @@
 layout: post
 title:  Tinder Clone Coding Part 2(Firebase Realtime Database)
 date:   2022-04-26 01:30:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # Component
