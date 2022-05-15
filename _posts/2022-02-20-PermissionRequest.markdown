@@ -2,7 +2,7 @@
 layout: post
 title:  Permission Request Process(Storage Access Framework)
 date:   2022-02-20 00:00:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # 앱 권한 요청 프로세스
