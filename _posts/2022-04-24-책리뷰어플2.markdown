@@ -2,7 +2,7 @@
 layout: post
 title:  도서 리뷰 앱 Part 2(Gilde, EditText.setOnKeyListener)
 date:   2022-04-24 00:32:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 
