@@ -2,7 +2,7 @@
 layout: post
 title:  Collections Operations(Transformations)
 date:   2022-02-13 22:50:00 +0900
-categories:   Kotlin
+categories:   Android
 ---
 
 # Collection Operations
