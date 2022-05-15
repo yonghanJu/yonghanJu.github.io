@@ -2,7 +2,7 @@
 layout: post
 title:  알림 앱(AlarmManager, Notification, Broadcast Receiver)
 date:   2022-03-27 01:10:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 
