@@ -2,7 +2,7 @@
 layout: post
 title:  NoActionBar
 date:   2022-02-19 16:07:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 ## NoActionBar
