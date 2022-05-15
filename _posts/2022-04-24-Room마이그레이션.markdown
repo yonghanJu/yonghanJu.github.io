@@ -2,7 +2,7 @@
 layout: post
 title:  데이터 베이스 마이그레이션 (버전 업그레이드)
 date:   2022-04-24 22:28:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # 디비 생성 코드 선언
