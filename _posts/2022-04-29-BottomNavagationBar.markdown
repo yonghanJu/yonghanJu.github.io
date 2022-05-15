@@ -2,7 +2,7 @@
 layout: post
 title:  Bottom Navigation Menu
 date:   2022-04-29 01:00:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # res/menu/bottom_navigation_menu.xml 생성
