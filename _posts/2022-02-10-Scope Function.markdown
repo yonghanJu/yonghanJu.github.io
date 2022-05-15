@@ -2,7 +2,7 @@
 layout: post
 title:  Scope Function
 date:   2022-2-10 21:06:00 +0300
-categories:   Kotlin
+categories:   Android
 ---
 
 # Scope Function(Kotlin)
