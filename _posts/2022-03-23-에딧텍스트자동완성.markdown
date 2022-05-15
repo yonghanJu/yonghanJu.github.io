@@ -2,7 +2,7 @@
 layout: post
 title:  AutoTextComplete, TextWatcher, TextInputEditText(Material Design)
 date:   2022-03-23 00:49:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # AutoTextComplete, MutiAutoTextComplete 
