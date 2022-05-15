@@ -2,7 +2,7 @@
 layout: post
 title:  도서 리뷰 앱 Part 3(Room Database)
 date:   2022-04-24 02:07:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # Room 사용하기
