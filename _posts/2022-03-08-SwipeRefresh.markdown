@@ -2,7 +2,7 @@
 layout: post
 title:  Swiperefreshlayout(WebView), ContentLoadingProgressBar
 date:   2022-03-08 15:50:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 
