@@ -2,7 +2,7 @@
 layout: post
 title:  RealMarsEstate Codelab
 date:   2022-01-20 13:00:00 +0300
-categories:   Codelab
+categories:   Android
 ---
 
 2022-01-10
