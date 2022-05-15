@@ -2,7 +2,7 @@
 layout: post
 title:  CustomView, Rotating Image
 date:   2022-03-24 12:23:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # CustomView
