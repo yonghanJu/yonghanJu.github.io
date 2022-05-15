@@ -2,7 +2,7 @@
 layout: post
 title:  viewModels() vs viewModel()
 date:   2022-05-09 16:52:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 * Activity ViewModel을 활용해 프래그먼트간 통신
 
