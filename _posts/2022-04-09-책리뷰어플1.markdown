@@ -2,7 +2,7 @@
 layout: post
 title:  도서 리뷰 앱 Part 1(RecyclerView, ViewBinding, Retrofit, DiffUtil, OpenAPI)
 date:   2022-04-09 12:45:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # 책 리뷰 어플 개발하기
