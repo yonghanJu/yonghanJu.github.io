@@ -2,7 +2,7 @@
 layout: post
 title:  Collections Operations(Filtering)
 date:   2022-02-14 17:58:00 +0900
-categories:   Kotlin
+categories:   Android
 ---
 
 # Collection Operations
