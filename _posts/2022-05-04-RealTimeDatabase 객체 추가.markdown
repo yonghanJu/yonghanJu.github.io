@@ -2,7 +2,7 @@
 layout: post
 title:  Realtime Database에 data class 추가하기
 date:   2022-05-04 22:00:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # data class 생성
