@@ -2,7 +2,7 @@
 layout: post
 title:  Collections Operations(plus, groupBy)
 date:   2022-02-15 19:50:00 +0900
-categories:   Kotlin
+categories:   Android
 ---
 
 # Collection Operations
