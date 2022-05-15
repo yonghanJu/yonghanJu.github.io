@@ -2,7 +2,7 @@
 layout: post
 title:  ViewPager2 PageTransformer
 date:   2022-03-22 01:05:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # ViewPager2 
