@@ -2,7 +2,7 @@
 layout: post
 title:  도서 리뷰 앱 Part 4(Parcelize)
 date:   2022-04-24 03:23:00 +0900
-categories:   Codelab
+categories:   Android
 ---
 
 # Parcelize 사용하기
