@@ -1,0 +1,99 @@
+---
+layout: post
+title:  PriorityQueue, Hashing 문제집 - BOJ_1766
+date:   2022-05-17 21:37:00 +0900
+categories:   Algorithm
+---
+
+# 문제집
+
+[문제집] 문제는 예전에 알고리즘 공부를 시작하기 전에 도전했다가 실패했던 문제이다.
+
+당시엔 실패했지만 포기하지 않았고 다시 도전해 풀이에 성공했다.
+
+간력한 문제 설명을 하자면 1~N 까지의 수를 조건에 맞게 나열하는 문제이다.
+
+처음에는 Sorting 문제인줄 알고 접근했지만 이후 다시 풀땐 __우선순위 큐, 해싱__ 을 사용해 문제를 풀었다.
+
+<br>
+
+# 정렬조건(우선순위 순)
+
+1. 먼저 풀 수 있는 문제가 존재하는 경우 우선순위에서 배제된다.
+
+2. 먼저 풀 수 있는 문제가 없는 경우 크기가 작은 순으로 우선순위 큐에 진입이 가능하다.
+
+<br>
+
+위 조건에 맞춰 구현했다.
+
+[문제집]: https://www.acmicpc.net/problem/1766
+
+
+
+<br>
+
+# 풀이
+
+
+
+<br>
+
+# 코드
+
+```kotlin
+// 2022-05-17
+// https://www.acmicpc.net/problem/1766
+
+import java.util.*
+
+class Solution {
+    fun solution(n:Int, array: Array<List<Int>>) {
+
+        // a->b 인덱싱 정보 저장
+        val aList = Array(n+1){mutableListOf<Int>()}
+
+        // b->a 인덱싱 정보 hashing 저장
+        val map = HashMap<Int,HashMap<Int,Boolean>>()
+
+        // 우선순위 큐 생성
+        val q = PriorityQueue<Int>()
+        val sb = StringBuilder()
+
+        // 먼저 풀어야하는 문제를 저장
+        for(a in array){
+            aList[a[0]].add(a[1])
+            if(map[a[1]]==null) map[a[1]]= hashMapOf()
+            map[a[1]]!![a[0]]=true
+        }
+
+        // 먼저 풀어야하는 문제가 없는 경우 바로 우선순위 큐 진입
+        for(i in 1..n){
+            if(map[i]==null) {
+                q.add(i)
+                isAdded[i]=true
+            }
+        }
+
+        // 우선순위 큐를 반복
+        while(q.isEmpty().not()){
+            val pop = q.poll()
+            sb.append(pop).append(' ')
+
+            // 해당 문제를 풀고나서 새롭게 풀 수 있는 문제를 큐에 추가
+            aList[pop].forEach {
+                if(map[it]!=null && map[it]!!.size>0){
+                    map[it]!!.remove(pop)
+                    if(map[it]!!.size==0) q.add(it)
+                }
+            }
+        }
+        print(sb)
+    }
+}
+
+fun main() {
+    val (N, M) = readLine()!!.split(' ')
+    Solution().solution(N.toInt(), Array(M.toInt()){readLine()!!.split(' ').map{it.toInt()}})
+}
+```
