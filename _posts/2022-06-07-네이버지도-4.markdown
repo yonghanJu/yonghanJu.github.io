@@ -1,0 +1,194 @@
+---
+layout: post
+title:  네이버 지도 API 활용 앱 - 4( ViewPager2, Glide, ListAdapter)
+date:   2022-06-07 00:31:00 +0900
+categories:   Android
+---
+
+<img src="/public/img/2022-06-06-1.png"  width="300" height="700">
+
+* Naver Map API
+
+* ViewPager2
+
+* FrameLayout
+
+* CoordinatotLayout
+
+* BottomSheetBehavior
+
+* Retrofit
+
+* Gilde
+
+<br>
+
+# ViewPager2 
+
+<br>
+
+Jectpack Library에 포함되어 있으며 RecyclerView로 구현되어있다.
+
+내부적으로 들어가는 item.xml 은 무조건 match parent 속성을 가져야 한다!!
+
+<br>
+
+* activity_main.xml 파일에 객체 추가
+
+```xml
+<!--activity_main.xml-->
+<androidx.viewpager2.widget.ViewPager2
+    android:id="@+id/houseViewPager"
+    android:layout_width="match_parent"
+    android:layout_height="100dp"
+    android:layout_gravity="bottom"
+    android:layout_marginBottom="120dp"
+    android:orientation="horizontal" />
+```
+
+<br>
+
+* item_house_for_viewpager.xml 파일 생성
+
+```xml
+<!--item_house_for_viewpager.xml-->
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginHorizontal="30dp"
+    android:background="@color/white"
+    app:cardCornerRadius="16dp"
+    tools:layout_height="100dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/thumbnailImageView"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/titleTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="12dp"
+            android:maxLines="2"
+            android:textColor="@color/black"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/thumbnailImageView"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="강남역 최저가!!강남역 최저가!!강남역 최저가!!강남역 최저가!!강남역 최저가!!강남역 최저가!!" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:maxLines="1"    
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/thumbnailImageView"
+            app:layout_constraintTop_toBottomOf="@id/titleTextView"
+            tools:text="12,000원" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>
+```
+
+<br>
+
+* HouseViewPagerAdapter.kt 생성
+
+<br>
+
+```kotlin
+// HouseViewPagerAdapter.kt
+class HouseViewPagerAdapter:ListAdapter<HouseModel, HouseViewPagerAdapter.ViewHolder>(diffUtil) {
+    inner class ViewHolder(private val binding: ItemHouseForViewpagerBinding):RecyclerView.ViewHolder(binding.root){
+
+        fun bind(house: HouseModel){
+            binding.titleTextView.text = house.title
+            binding.priceTextView.text = house.price
+
+            Glide.with(binding.thumbnailImageView.context)
+                .load(house.imgUrl)
+                .into(binding.thumbnailImageView)
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(
+            ItemHouseForViewpagerBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+        )
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(currentList[position])
+    }
+
+    companion object {
+        val diffUtil = object : DiffUtil.ItemCallback<HouseModel>() {
+            override fun areItemsTheSame(oldItem: HouseModel, newItem: HouseModel): Boolean {
+                return oldItem.id == newItem.id
+            }
+
+            override fun areContentsTheSame(oldItem: HouseModel, newItem: HouseModel): Boolean {
+                return oldItem == newItem
+            }
+        }
+    }
+}
+```
+
+<br>
+
+* MainActivity.kt 에서 ViewPager 사용
+
+<br>
+
+어뎁터, 뷰페이터 객체를 초기화, 레트로핏 통신 부분에서 리스트 입력
+
+```kotlin
+// MainActivity.kt
+
+private val viewPager by lazy{ binding.houseViewPager }
+
+private val viewPagerAdapter = HouseViewPagerAdapter()
+
+...
+
+viewPager.adapter = viewPagerAdapter
+
+...
+
+// 레트로핏 결과 받으면
+response.body()?.let{ houseDto ->
+    // ViewPager 객체에 리스트 입력
+    viewPagerAdapter.submitList(houseDto.items)
+
+    ...
+}
+```
+
+<br>
+
+# 결과 화면
+
+<img src="/public/img/2022-06-07-2.png"  width="300" height="700">
