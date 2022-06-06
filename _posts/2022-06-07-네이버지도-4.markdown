@@ -5,8 +5,6 @@ date:   2022-06-07 00:31:00 +0900
 categories:   Android
 ---
 
-<img src="/public/img/2022-06-06-1.png"  width="300" height="700">
-
 * Naver Map API
 
 * ViewPager2
