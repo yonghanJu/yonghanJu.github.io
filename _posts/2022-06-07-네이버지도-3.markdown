@@ -1,0 +1,220 @@
+---
+layout: post
+title:  네이버 지도 API 활용 앱 - 3( MockAPI, Retrofit )
+date:   2022-06-07 00:31:00 +0900
+categories:   Android
+---
+
+<img src="/public/img/2022-06-06-1.png"  width="300" height="700">
+
+* Naver Map API
+
+* ViewPager2
+
+* FrameLayout
+
+* CoordinatotLayout
+
+* BottomSheetBehavior
+
+* Retrofit
+
+* Gilde
+
+<br>
+
+# Mocky 업로드
+
+<br>
+
+[Picsum] 사이트를 이용해 랜덤 이미지 사용
+
+[Picsum]:https://picsum.photos/
+
+```json
+{
+    "items":[
+        {
+            "id": 1,
+            "title": "강남역!, 최저가!!, 레지던스!!",
+            "price": "23,000원",
+            "lat": 37.51387598530363,
+            "lng": 127.10129048872753 ,
+            "imgUrl":"https://i.picsum.photos/id/844/200/200.jpg?hmac=blYHTv1EUQA2puhc8O_7gTL4H6Y8FgSmVXDYEJqXWdQ"
+        },
+        {
+            "id": 2,
+            "title": "석촌역!, 최저가!!, 레지던스!!",
+            "price": "26,000원",
+            "lat": 37.50500484239669,
+            "lng": 127.10725003027228 ,
+            "imgUrl":"https://i.picsum.photos/id/442/200/200.jpg?hmac=S-yNCNr30GK97ulUYoey_Fh2-czIf7YnNgcKp7zrEoE"
+        }
+    ]
+}
+```
+
+<br>
+
+[Mocky] 사이트를 이용해 위 http Response Body를 업로드
+
+[Mocky]: https://designer.mocky.io/
+
+
+<br>
+
+```
+// 요청 url
+https://run.mocky.io/v3/3ee74756-1b9e-4531-ab3e-fa0559eba05e
+```
+
+<br>
+
+# Retrofit2 종속성 추가
+
+<br>
+
+```
+    // 레트로핏
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+
+    // Glide
+    implementation 'com.github.bumptech.glide:glide:4.13.0'
+```
+
+<br>
+
+인터넷 사용 권한 추가
+
+```xml
+<!--AndroidManifest.xml-->
+<uses-permission android:name="android.permission.INTERNET"/>
+```
+
+<br>
+
+# 레트로핏 추가
+
+<br>
+
+* HouseModel Data Class 생성
+
+<br>
+
+레트로핏 통신을 통해 받아올 객체 생성
+
+```kotlin
+// HouseModel.kt
+data class HouseModel(
+    val id:Int,
+    val title:String,
+    val price:String,
+    val imgUrl:String,
+    val lat:Double,
+    val lng:Double
+)
+```
+
+<br>
+
+* HouseDto 생성
+
+<br>
+
+Http Response Body를 보면 ```items```로 모든 객체를 묶었기 때문에 바로 ```List``` 객체를 받을 수 없어서 Dto 클래스를 만들어 줘야함
+
+```kotlin
+// HouseDto.kt
+data class HouseDto(
+    val items: List<HouseModel>
+)
+```
+
+<br>
+
+* HouseService 생성
+
+<br>
+
+통신을 담당할 인터페이스 생성
+
+```kotlin
+// HouseService.kt
+interface HouseService {
+    @GET("/v3/3ee74756-1b9e-4531-ab3e-fa0559eba05e")
+    fun getHouseList(): Call<HouseDto>
+}
+```
+
+<br>
+
+* 메인 엑티비티에서 레트로핏 사용
+
+<br>
+
+레트로핏으로 통신 후 객체 정보를 naverMap 객체에 마커로 찍기
+
+```kotlin
+// MainActivity.kt
+
+override onMapReady(map: NaverMap){
+    ...
+
+    // 네이버 맵이 그려진 이후에 마커를 찍기 위해서 만 아래 함수 실행
+    getHouseFromApi()
+}
+
+private fun getHouseFromApi(){
+
+    // 레트로핏 객체 생성
+    val retrofit = Retrofit.Builder()
+    .baseUrl("https://run.mocky.io")
+    .addConverterFactory(GsonConverterFactory.create())
+    .build()
+
+    // 서비스 생성
+    retrofit.create(HouseService::class.java).also{ houseService->
+
+        // 통신 결과
+        houseService.getHouseList()
+            .enqueue(object : Callback<HouseDto> {
+                override fun onResponse(call: Call<HouseDto>, response: Response<HouseDto>) {
+                    if(response.isSuccessful.not()){
+                        // 실패 처리
+                        Log.d("retrofit",response.errorBody().toString())
+                        return
+                    }
+
+                    response.body()?.let{ houseDto ->
+                        houseDto.items.forEach{ houseModel->
+                            val marker = Marker()
+                            marker.position = LatLng(houseModel.lat, houseModel.lng)
+                            // 추후 marker.onClickListener
+                            marker.map = naverMap
+                            marker.tag = houseModel.id
+                            marker.icon = MarkerIcons.BLACK
+                            marker.iconTintColor = Color.RED
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<HouseDto>, t: Throwable) {
+                    // 실패 처리
+                    Log.d("retrofit",t.message.toString())
+                }
+            })
+    }
+}
+```
+
+<br>
+
+# 결과 화면
+
+<br>
+
+<img src="/public/img/2022-06-06-1.png"  width="300" height="700">
+
+
+
