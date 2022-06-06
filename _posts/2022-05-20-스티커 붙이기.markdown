@@ -1,0 +1,103 @@
+---
+layout: post
+title:  Simulation 스티커 붙이기 - BOJ_18808
+date:   2022-05-20 18:02:00 +0900
+categories:   Algorithm
+---
+
+# 문제
+
+[스티커 붙이기]
+
+<br>
+
+# 정렬조건(우선순위 순)
+
+1. 먼저 풀 수 있는 문제가 존재하는 경우 우선순위에서 배제된다.
+
+2. 먼저 풀 수 있는 문제가 없는 경우 크기가 작은 순으로 우선순위 큐에 진입이 가능하다.
+
+<br>
+
+위 조건에 맞춰 구현했다.
+
+[스티커 붙이기]: https://www.acmicpc.net/problem/18808
+
+
+
+<br>
+
+# 풀이
+
+
+
+<br>
+
+# 코드
+
+```kotlin
+// 2022-05-19
+// https://www.acmicpc.net/problem/18808
+
+import java.util.*
+
+class Solution {
+    lateinit var table:Array<BooleanArray>
+    var answer = 0
+
+    fun solution(n:Int, m:Int, stickers:Array<Array<IntArray>>) {
+        table = Array(n){BooleanArray(m)}
+
+        outer@for(sticker in stickers){
+            var s = sticker
+            for(r in 0..3){
+                if(r!=0) s = rotate(s)
+                val xLen=s.size
+                val jLen =s[0].size
+                for(i in 0 until n-xLen+1){
+                    for(j in 0 until m-jLen+1){
+                        if(match(s,i,j)) continue@outer
+                    }
+                }
+            }
+        }
+        print(answer)
+    }
+
+    fun match(s:Array<IntArray>, x:Int, y:Int):Boolean{
+        for(i in s.indices){
+            for(j in s[0].indices){
+                if(s[i][j]==1 && table[x+i][y+j]) return false
+            }
+        }
+        for(i in s.indices){
+            for(j in s[0].indices){
+                if(s[i][j]==1){
+                    table[x+i][y+j]=true
+                    answer++
+                }
+            }
+        }
+        return true
+    }
+
+    fun rotate(s:Array<IntArray>):Array<IntArray>{
+        val ns = Array(s[0].size){IntArray(s.size)}
+        val xLen =s.size
+        for(i in s.indices){
+            for(j in s[0].indices){
+                ns[j][xLen-1-i]=s[i][j]
+            }
+        }
+        return ns
+    }
+}
+
+fun main() {
+    val (N, M, K) = readLine()!!.split(' ')
+    Solution().solution(N.toInt(),M.toInt(),Array( K.toInt() ){
+        val (x,y) = readLine()!!.split(' ')
+        Array(x.toInt()){ readLine()!!.split(' ').map{it.toInt()}.toIntArray() }
+    })
+}
+```
