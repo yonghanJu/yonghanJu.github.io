@@ -1,0 +1,263 @@
+---
+layout: post
+title:  네이버 지도 API 활용 앱 - 1(MapView, Google Services LocationSource)
+date:   2022-06-06 15:23:00 +0900
+categories:   Android
+---
+
+* Naver Map API
+
+* ViewPager2
+
+* FrameLayout
+
+* CoordinatotLayout
+
+* BottomSheetBehavior
+
+* Retrofit
+
+* Gilde
+
+<br>
+
+# 네이버 지도 API 사용
+
+<br>
+
+아래 사진과 같이 네이버 클라우드 플렛폼에 어플리케이션 추가
+
+<img src="/public/img/2022-06-06-1.png"  width="500" height="200">
+
+<br>
+
+프로젝트 수준의 ```settings.gradle```에 종속성 추가
+
+```kotlin
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url 'https://naver.jfrog.io/artifactory/maven/'
+        }
+    }
+}
+```
+
+<Br>
+
+앱 수준의 ```build.gradle```에 종속성 추가
+
+```kotlin
+// 네이버 지도
+implementation 'com.naver.maps:map-sdk:3.11.0'
+```
+
+<br>
+
+```gradle.properties``` 파일에 아래 두 줄을 추가하지 않으면 에러가 발생한다. __꼭 추가해 주자__
+
+```kotlin
+android.useAndroidX=true
+android.enableJetifier=true
+```
+
+<br>
+
+```strings.xml``` 안에 ```naver_map_client_id``` 이름으로 client id 값 추가
+
+<br>
+
+```Manifest.xml``` 파일 어플리케이션 안에 메타 데이터를 추가
+
+```xml
+<meta-data
+    android:name="com.naver.maps.map.CLIENT_ID"
+    android:value="@string/naver_map_client_id"/>
+```
+
+네이버 지도를 사용하는 2가지 방법
+
+1. 프래그먼트 (프래그먼트의 생명 주기)
+
+2. MapView (생명 주기를 직접 넘겨줘야함, 이번에 사용할 방법)
+
+<br>
+
+# MapView에 생명주기 넘겨주기
+
+<br>
+
+아래 코드와 같이 mapView 객체에 엑티비티의 생명주기를 따라가도록 넘여줘야 함
+
+```kotlin
+class MainActivity : AppCompatActivity() {
+
+    private val binding by lazy{ ActivityMainBinding.inflate(layoutInflater) }
+
+    private val mapView by lazy{ binding.mapView }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(binding.root)    
+
+        mapView.onCreate(savedInstanceState)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        mapView.onStart()
+    }
+
+
+    override fun onResume() {
+        super.onResume()
+        mapView.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mapView.onPause()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        mapView.onSaveInstanceState(outState)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        mapView.onStop()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mapView.onDestroy()
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        mapView.onLowMemory()
+    }
+}
+```
+
+<br>
+
+# 맵 가져오기
+
+<br>
+
+```kotlin
+    // MainActivity.kt
+    private lateinit var naverMap:NaverMap
+    
+    // OnMapReadyCallback 객체를 매개변수로 받기 때문에 
+    // 메인 엑티비티가 OnMapReadyCallback 인터페이스를 상속, 구현
+    // onCreate 안에
+    mapView.getMapAsync(this)
+
+    override fun onMapReady(map: NaverMap) {
+        naverMap = map
+
+        // 일반 적인 레벨
+        naverMap.maxZoom = 18.0
+        naverMap.minZoom = 10.0
+
+        // 위도 경도로 지도 화면 이동
+        val cameraUpdate = CameraUpdate.scrollAndZoomTo(LatLng(37.498095, 127.027610),15.0)
+        naverMap.moveCamera(cameraUpdate)
+
+        // 현위치 표시(버튼을 누르면 바로 내위치 이동하기 기능, 위치 권한 필요)
+        val uiSetting = naverMap.uiSettings
+        uiSetting.isLocationButtonEnabled = true
+    }
+```
+
+<br>
+
+위 코드에서 위치 권한이 필요하므로 아래 코드를 통해 권한을 받아오자
+
+```xml
+<!--Manifest.xml-->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
+        tools:ignore="CoarseFineLocation" />
+
+```
+
+
+```kotlin
+    // 위치 권한 받아오기, 앱 수준의 build.gradle
+    implementation 'com.google.android.gms:play-services-location:19.0.1'
+```
+
+<br>
+
+```kotlin
+    // MainACtivity.kt
+    private lateinit var locationSource:FusedLocationSource
+
+    override fun onMapReady(map: NaverMap) {
+        
+        ...
+
+        // 현위치 표시(버튼을 누르면 바로 내위치 이동하기 기능, 위치 권한 필요)
+        val uiSetting = naverMap.uiSettings
+        uiSetting.isLocationButtonEnabled = true
+
+        // 위치 및 권한을 받아옴 ( 위치 정보를 편하게 가져올 수 있음)
+        locationSource = FusedLocationSource(this@MainActivity, LOCATION_PERMISSION_REQUEST_CODE)
+        naverMap.locationSource = locationSource
+    }
+
+    // 위치 권한 요구에 필요한 함수 오버라이딩
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        // 위치 권한이 아닐 때는 넘김
+        if(requestCode != LOCATION_PERMISSION_REQUEST_CODE){
+            return
+        }
+        
+        // 위치 권한일 때 처리
+        if(locationSource.onRequestPermissionsResult(requestCode, permissions, grantResults)){
+            if(!locationSource.isActivated){
+                naverMap.locationTrackingMode = LocationTrackingMode.None
+            }
+            return
+        }
+    }
+
+    // 위치 권한 요청 코드
+    companion object{
+        private const val LOCATION_PERMISSION_REQUEST_CODE = 1000
+    }
+```
+
+<br>
+
+마커로 위치 찍기
+
+```kotlin
+    // onMapReady() 안에서
+        // 마커, 위치를 찍을 수 있는 핀 찍기
+        val marker = Marker()
+        marker.position = LatLng(37.498095, 127.027610)
+        marker.map = naverMap
+        marker.icon = MarkerIcons.BLACK
+        marker.iconTintColor = Color.RED
+```
+
+<br>
+
+# 최종 화면
+
+<br>
+
+<img src="/public/img/2022-06-06-2.png"  width="300" height="700">
