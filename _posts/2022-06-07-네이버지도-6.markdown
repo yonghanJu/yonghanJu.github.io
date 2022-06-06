@@ -1,0 +1,79 @@
+---
+layout: post
+title:  네이버 지도 API 활용 앱 - 6( ViewPager 리스너, 네이버 지도 카메라 이동, 마커 리스너)
+date:   2022-06-07 02:38:00 +0900
+categories:   Android
+---
+
+* Naver Map API
+
+* ViewPager2
+
+* FrameLayout
+
+* CoordinatotLayout
+
+* BottomSheetBehavior
+
+* Retrofit
+
+* Gilde
+
+<br>
+
+# ViewPager PageChangeCallback 구현
+
+<br>
+
+뷰 페이저가 변경되면 해당 house로 카메라 부드럽게 이동하기
+
+<br>
+
+```kotlin
+    // MainActivity.kt
+    viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback(){
+        override fun onPageSelected(position: Int) {
+            super.onPageSelected(position)
+
+            // 선택된 house
+            val selectedHouse = viewPagerAdapter.currentList[position]
+
+            // 카메라 애니메이션으로 부드럽게 이동하기
+            val cameraUpdate = CameraUpdate.scrollTo(LatLng(selectedHouse.lat, selectedHouse.lng))
+                .animate(CameraAnimation.Easing)
+            naverMap.moveCamera(cameraUpdate)
+        }
+    })
+```
+
+<br>
+
+# 마커 리스너 구현
+
+<br>
+
+```kotlin
+// MainActivity.kt
+
+// Overlay.OnClickListener 인터페이스 상속, 구현
+
+// 마커를 달아주는 부분
+marker.onClickListener = this@MainActivitys
+
+
+override fun onClick(marker: Overlay): Boolean {
+
+    // firstOrNull 리스트에서 일치하는 첫번째 값 반환
+    val selectedModel = viewPagerAdapter.currentList.firstOrNull{
+        it.id == marker.tag
+    }
+
+    // null이 아니라면, viewPager 이동
+    selectedModel?.let{
+        val position = viewPagerAdapter.currentList.indexOf(it)
+        viewPager.currentItem = position
+    }
+    return true
+}
+```
+
