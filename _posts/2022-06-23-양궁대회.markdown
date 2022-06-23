@@ -1,0 +1,111 @@
+---
+layout: post
+title:  DFS 양궁대회  - Programers LEVEL 2
+date:   2022-06-23 19:56:00 +0900
+categories:   Algorithm
+---
+
+# 양궁대회
+
+<br>
+
+이번 [문제]를 포스팅한건 문제 상황을 공유, 도움 받기 위해서이다.
+
+간단한 dfs 문제인 것 같은 위 문제는 단순히 모든 화살 개수를 탐색할 경우 __test case 8번과 18번__ 를 통과하지 못한다.
+
+<br>
+
+# 문제점
+
+<br>
+
+문제의 __제한조건__ 중
+
+<br>
+
+- 라이언이 가장 큰 점수 차이로 우승할 수 있는 방법이 여러 가지 일 경우, 가장 낮은 점수를 더 많이 맞힌 경우를 return 해주세요.
+
+- 가장 낮은 점수를 맞힌 개수가 같을 경우 계속해서 그다음으로 낮은 점수를 더 많이 맞힌 경우를 return 해주세요.
+
+    예를 들어, [2,3,1,0,0,0,0,1,3,0,0]과 [2,1,0,2,0,0,0,2,3,0,0]를 비교하면 [2,1,0,2,0,0,0,2,3,0,0]를 return 해야 합니다.
+
+    다른 예로, [0,0,2,3,4,1,0,0,0,0,0]과 [9,0,0,0,0,0,0,0,1,0,0]를 비교하면[9,0,0,0,0,0,0,0,1,0,0]를 return 해야 합니다.
+
+<br>
+
+위 제한조건을 통과하지 못하는 경우 8번과 18번 테스트케이스를 통과하지 못한다.
+
+<br>
+
+아래 코드에서 주석을 살펴보면 ```// 제한 조건 확인을 위해 추가된 부분``` 아래 코드를 추가해 오류를 고칠 수 있었다.
+
+하지만 아직도 이전 코드의 반례를 찾지 못했다.
+
+알고있는 분이 계시다면 댓글이나 메일을 주시면 감사하겠습니다.
+
+
+[문제]: https://programmers.co.kr/learn/courses/30/lessons/92342#
+
+
+
+<br>
+
+# 풀이
+
+
+
+<br>
+
+# 코드
+
+```kotlin
+// 2022-06-23
+// https://programmers.co.kr/learn/courses/30/lessons/92342#
+
+class Solution {
+    var max = -Int.MAX_VALUE
+    val score = IntArray(11)
+    var answer = intArrayOf(-1)
+    fun solution(n: Int, info: IntArray): IntArray {
+        dfs(0,0,n,info)
+        return answer
+    }
+    
+    fun dfs(index:Int, count:Int, n:Int, info:IntArray){
+        // 종료 조건
+        if(index>=11){
+            if(count <n) return
+            var s =0
+            for(i in 0..10){
+                if(score[i] == 0 && info[i] == 0) continue
+                if(score[i] > info[i]){
+                    s+= 10-i
+                }else s-= 10-i
+            }
+            if(s>0 && s > max){
+                answer = score.clone()
+                max = s
+            }
+
+            // 제한 조건 확인을 위해 추가된 부분
+            if(s==max){
+                for(i in 10 downTo 0){
+                    if(answer[i] == score[i]) continue
+                    if(answer[i] < score[i]) {
+                        answer = score.clone()
+                        max = s
+                    }
+                    break
+                }
+            }
+            return
+        }
+        
+        // dfs 반복
+        for(i in 0..n-count){
+            score[index] = i
+            dfs(index+1, count+i, n, info)
+        }
+    }
+}
+```
