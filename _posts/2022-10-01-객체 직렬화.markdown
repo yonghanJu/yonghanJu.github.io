@@ -1,0 +1,139 @@
+---
+layout: post
+title:  Gson을 이용한 객체 직렬화
+date:   2022-10-1 11:30:00 +0900
+categories:   Android
+---
+
+# 객체 자체를 직렬화, 저장하고 다시 불러오기
+
+### Gson 라이브러리 추가
+
+<br>
+
+[Gson]은 자바 객체를 Json 형태로 변환해주는 라이브러리이다.
+> Gson is a Java library that can be used to convert Java Objects into their JSON representation
+
+[Gson]: https://github.com/google/gson#download
+
+<br>
+
+아래 의존성을 추가해주자.
+
+```Groovy
+dependencies {
+  implementation 'com.google.code.gson:gson:2.9.1'
+}
+```
+
+<br>
+
+### Object -> Json 변환
+
+아래 코드는 간단하게 java object 를 json으로 바꿔준다.
+
+```kotlin
+val gson = Gson()
+val json = gson.toJson(Plane.getInstance())
+```
+
+<br>
+
+### Json -> Object 변환
+
+위에서 만들었던 `json` 변수를 사용해 다시 객체를 복원할 수 있다.
+
+```kotlin
+val plane = gsonForPlane.fromJson(json, Plane::class.java)
+```
+
+<br>
+
+## Issue
+### Interfaces can't be instantiated!
+
+<br>
+
+위 방법은 간단하게 객체를 json으로 변환하지만 __인터페이스__ 를 포함하는 경우 위와 같은 오류가 발생한다.
+
+`Plane` 클래스는 `ShapeModel` 인터페이스를 상속한 여러 타입을 관리하기 위해 아래 맴버를 갖고있으며 __interfaces can't be instantiated!__ 에러가 발생한다.
+
+<br>
+
+```kotlin
+// Plane.kt
+class Plane {
+    private val rectModelList = mutableListOf<ShapeModel>()
+    ...
+}
+
+// ShapeModel.kt
+interface ShapeModel {
+    ...
+}
+```
+
+<br>
+
+## 해결 방법 
+### TypeAdatper: JsonSerializer\<T>, JsonDeserializer\<T>
+
+<br>
+
+인터페이스를 직렬화 하기 위해서는 `JsonSerializer<T>`, `JsonDeserializer<T>` 두 인터페이스를 구현하는 `TypeAdatper` 클래스를 만들어야한다. __(T 지네릭 타입 = 인터페이스 타입)__
+
+<br>
+
+타입 어뎁터 클래스까지 만들었다면 위에서 사용하던 `Gson()` 생성자 대신 `GsonBuilder()` 빌더 패턴을 활용해 타입 어뎁터 클래스를 등록하면 된다.
+
+<br>
+
+```kotlin
+class ShapeTypeAdapter: JsonSerializer<ShapeModel>, JsonDeserializer<ShapeModel> {
+    override fun serialize(
+        src: ShapeModel?,
+        typeOfSrc: Type?,
+        context: JsonSerializationContext?
+    ): JsonElement {
+        return JsonObject().apply {
+            addProperty(CLASSNAME, src?.javaClass?.name)
+            add(DATA, context?.serialize(src))
+        }
+    }
+
+    override fun deserialize(
+        json: JsonElement?,
+        typeOfT: Type?,
+        context: JsonDeserializationContext?
+    ): ShapeModel {
+        val jsonObject = json?.asJsonObject
+        val className = jsonObject?.get(CLASSNAME)?.asString
+        val objectClass = getObjectClass(className)
+        return context!!.deserialize(jsonObject?.get(DATA), objectClass)
+    }
+
+    private fun getObjectClass(className: String?): Class<*> {
+        try {
+            return Class.forName(className)
+        } catch (e: ClassNotFoundException) {
+            throw JsonParseException(e)
+        }
+    }
+
+    companion object {
+        private const val CLASSNAME = "CLASSNAME"
+        private const val DATA = "DATA"
+    }
+}
+```
+
+<br>
+
+```kotlin
+// 어뎁터 등록 gson 객체
+val gson =  GsonBuilder()
+            .registerTypeAdapter(ShapeModel::class.java, ShapeTypeAdapter())
+            .create()
+```
+
+<br>
