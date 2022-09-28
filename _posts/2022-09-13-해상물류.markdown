@@ -1,0 +1,90 @@
+---
+layout: post
+title:  해상물류 프로젝트 실시간 번역 코드
+date:   2022-09-28 19:28:00 +0900
+categories:   Android
+---
+
+
+# 해상물류 프로젝트 실시간 번역 코드
+
+# ML Kit을 활용한 번역
+
+__1) 의존성 프로젝트 추가__
+
+1-1. 프로젝트 레벨의 ```build.gradle``` 파일에 Google`s Maven 저장소를 추가한다.  
+
+1-2. 앱 레벨의 ```app/build.gradle``` 파일에 아래 종속성 프로젝트를 추가한다.
+
+```
+dependencies {
+  // ...
+
+  implementation 'com.google.mlkit:translate:17.0.0'
+}
+```
+
+<br>
+<br>
+
+__2) 번역 객체 생성__
+
+2-1. Translator 객체를 생성하고 빌더패턴을 이용해 소스언어와 타켓언어를 지정해준다.
+
+언어 직접 지정 방식과 Language Identification API를 활용한 언어 감지 방식 2가지 모두 사용.
+
+```kotlin
+// Create an English-German translator:
+val options = TranslatorOptions.Builder()
+    .setSourceLanguage(TranslateLanguage.ENGLISH)
+    .setTargetLanguage(TranslateLanguage.GERMAN)
+    .build()
+val englishGermanTranslator = Translation.getClient(options)
+```
+
+<br>
+
+2-2. 해당 번역 모델을 주입받고 사용이 CallBack 패턴활용해 주입 성공 처리를 한다. 
+
+모델 주입이 완료되면 번역을 시작하도록 한다.
+
+```kotlin
+var conditions = DownloadConditions.Builder()
+    .requireWifi()
+    .build()
+englishGermanTranslator.downloadModelIfNeeded(conditions)
+    .addOnSuccessListener {
+        // Model downloaded successfully. Okay to start translating.
+    }
+    .addOnFailureListener { exception ->
+        // Model couldn’t be downloaded or other internal error.
+    }
+```
+
+<br>
+
+2-3. 번역기 객체 주입 이후 ```translation()``` 함수를 사용
+
+```kotlin
+englishGermanTranslator.translate(text)
+    .addOnSuccessListener { translatedText ->
+        // Translation successful.
+    }
+    .addOnFailureListener { exception ->
+         // Error.
+    }
+```
+
+<bR>
+
+__3. 메모리 관리 및 누수 방지__
+
+3-1. 번역기 객체 사용 이후에는 ```close()```함수를 호출해 메모리를 풀어준다.
+
+또는 현재 객체를 가지고 있는 Activity 또는 Fragment의 Lifecycle의 옵저버에 객체를 추가해 Lifecycle-Aware 객체를 만들어 메모리 누수를 방지해준다.
+
+```kotlin
+val options = ...
+val translator = Translation.getClient(options)
+getLifecycle().addObserver(translator)
+```
