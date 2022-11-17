@@ -2,7 +2,7 @@
 layout: post
 title:  부스트캠프/Callback 기반 API를 단방향 데이터 흐름으로 Part.1
 date:   2022-11-18 02:50:00 +0900
-categories:   Android Competiton
+categories:   Competiton
 ---
 
 ## Callback 기반 API를 단방향 데이터 흐름으로 바꾸기
