@@ -94,7 +94,7 @@ binding.button.setOnClickListener {
 
 <img src="https://user-images.githubusercontent.com/65655825/202519550-bbcefea8-ea96-4202-9796-b6ea289e993b.png" alt="drawing" width="400"/>
 
-그룹 프로젝트 앱 설계를 하면서 다음과 같은 흐름으로 문제 상황을 확인느겼다.
+그룹 프로젝트 앱 설계를 하면서 다음과 같은 흐름으로 문제 상황을 확인했다.
 
 1. 그룹 프로젝트 팀원은 전원 안드로이드 개발자로 백엔드 개발자가 없기 때문에 별도의 서버를 구축하지 않고 `Firebase FireStore` 를 사용하기로 했다.
 
