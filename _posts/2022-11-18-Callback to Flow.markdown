@@ -362,6 +362,21 @@ __내부 코드에 의해 우리가 정의했던 익명함수가 ```InvokeOnCanc
 
 또한 ```_state``` 의 상태로 ```CancelHandler```가 될 수 있다!!
 
+<br>
+
+## 정리
+
+- __Completionhandler__ 는 __Throwable?__ 를 인자로 받는 람다일 뿐
+    > public typealias CompletionHandler = (cause: Throwable?) -> Unit
+
+- __CancelHandler__ 는 __CompletionHandler__ 를 상속하고 __invoke__ 함수를 갖는 클래스 
+
+- __CancelableContinuationImpl__ 내부에서 우리가 작성한 __Completionhandler__ 를 __CancelHandler__ 로 변환해서 **_state** 값으로 참조함.
+
+<br>
+
+### invokeOnCancellation 구현부
+
 
 ```kotlin
     /**
@@ -377,7 +392,6 @@ __내부 코드에 의해 우리가 정의했던 익명함수가 ```InvokeOnCanc
 ```
 
 ```kotlin
-// invokeOnCancellation() 구현부
  public override fun invokeOnCancellation(handler: CompletionHandler) {
         val cancelHandler = makeCancelHandler(handler)
         _state.loop { state ->
