@@ -119,10 +119,8 @@ binding.button.setOnClickListener {
 ```kotlin
 suspend fun getUser(): User {
     return suspendCoroutine { continuation ->
-        db.collection("Users")
-            .document(uid)
-            .get()
-            .addOnCompleteListener { 
+        getUserCallback(uid)
+            .OnSuccess { 
                 continuation.resume(fakeUser)
             }
     }
@@ -144,10 +142,8 @@ suspend fun getUser(): User {
 ```kotlin
 suspend fun getUser(): User {
     return suspendCancellableCoroutine { continuation ->
-        db.collection("Users")
-            .document(uid)
-            .get()
-            .addOnCompleteListener { 
+        getUserCallback(uid)
+            .OnSuccess { 
                 continuation.resume(fakeUser)
             }
 
