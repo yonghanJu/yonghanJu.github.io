@@ -1,0 +1,95 @@
+---
+layout: post
+title:  DFS/사다리 조작  - BOJ Gold3
+date:   2022-11-19 15:36:00 +0900
+categories:   Algorithm
+---
+
+# 사다리 조작
+
+__[사다리 조작]__ 이번 문제는 백준 골드 3단계 문제로 오랜만에 푸는 알고리즘 문제라 익숙한 DFS 문제를 선택했지만 쉽지 않았다.
+
+__[사다리 조작 문제 보러가기]__
+
+<br>
+
+# 내 풀이 설명
+
+1. 사다리를 2차원 배열로 생각하고 [1행, 1열] 에서 시작해 [h행, n열] 까지 DFS 탐색을 실시한다.
+
+2. DFS 함수 인자로 __(시작 열, 현재 행, 현재 열, 사다리 놓은 갯수)__ 를 받는다.
+
+3. 현재 행 값이 H를 넘기면(사다리 밑에 도착하면) 다음 로직을 수행한다
+
+    3.1 도착 열과 시작 열이 __같지 않으면__(조작 실패) __깊이 탐색 종료__
+
+    3.2 도착 열과 시작 열이 __같다면__(조작 성공) 다음 시작열로 넘어간다, __다음 시작열이 없다면 함수 종료__
+
+<br>
+
+[사다리 조작]: https://www.acmicpc.net/problem/15684
+
+[사다리 조작 문제 보러가기]: https://www.acmicpc.net/problem/15684
+
+# 코드
+
+```kotlin
+// 2022-11-19
+// https://www.acmicpc.net/problem/15684
+
+class Solution {
+    var n = 0
+    var h = 0
+    private var table = List(0) { BooleanArray(0) }
+    private var answer = Int.MAX_VALUE
+    fun solution(info: List<Int>, list: List<IntArray>) {
+        n = info[0]
+        h = info[2]
+        table = List(h + 1) { BooleanArray(n + 1) }.apply {
+            repeat(info[1]) {
+                get(list[it][0])[list[it][1]] = true
+            }
+        }
+        dfs(1, 1, 1, 0)
+        println(if (answer == Int.MAX_VALUE) -1 else answer)
+    }
+
+    private fun dfs(startY: Int, x: Int, y: Int, depth: Int) {
+        if (depth == 4 || depth == answer ) return  // 깊이 4 초과, 중복 제거
+        if (x > h && startY == y && y == n) { // 종료 조건
+            answer = minOf(answer, depth)
+            return
+        }
+        if (x > h) {
+            if (startY == y) dfs(startY + 1, 1, startY + 1, depth) // 다음 시작 열
+            return
+        }
+
+        // 경우의 수
+        if (table[x][y]) { // 오른쪽 다리가 있으면
+            dfs(startY, x + 1, y + 1, depth)
+        } else if (table[x][y - 1]) { // 왼쪽 다리가 있으면
+            dfs(startY, x + 1, y - 1, depth)
+        } else { // 다리가 없으면
+            dfs(startY, x + 1, y, depth) // 다리 안놓기
+            if (y < n && table[x][y].not() && table[x][y+1].not()) { // 다리 놓기 오른쪽
+                table[x][y] = true
+                dfs(startY, x + 1, y + 1, depth + 1)
+                table[x][y] = false
+            }
+            if (y > 1 && table[x][y - 1].not() && table[x][y-2].not()) { // 다리 놓기 왼쪽
+                table[x][y - 1] = true
+                dfs(startY, x + 1, y - 1, depth + 1)
+                table[x][y - 1] = false
+            }
+        }
+    }
+}
+
+fun main() {
+    val info = readLine()!!.split(" ").map { it.toInt() }.toList()
+    val list = List(info[1]) { readLine()!!.split(" ").map { it.toInt() }.toIntArray() }
+    Solution().solution(info, list)
+
+}
+```
