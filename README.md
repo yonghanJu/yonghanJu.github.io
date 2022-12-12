@@ -18,15 +18,15 @@ permalink: /about/
 [![Contact](https://img.shields.io/badge/Contact-0FE4FF)](mailto:ju990828@naver.com)
 
 
-&nbsp;&nbsp;  안드로이드 개발자를 꿈꾸는 주용한입니다.
+&nbsp;&nbsp;  더 나은 세상을 만들기 위해 노력하는 안드로이드 개발자 주용한입니다.
 
 <BR><BR>
 
 ## Experience
 
-- __네이버 부스트캠프 멤버십__ 진행중
+- __네이버 커넥트 재단 부스트캠프 웹 • 모바일 7기 멤버십__ 수료
 
-- __네이버 부스트캠프 첼린지__ 수료
+- __네이버 커넥트 재단 부스트캠프 웹 • 모바일 7기 챌린지__ 수료
 
 - (주)거버넌스휴먼 외주 개발
 
