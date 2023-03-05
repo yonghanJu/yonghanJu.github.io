@@ -1,0 +1,121 @@
+---
+layout: post
+title:  BTree, Inorder, BFS, Regression/트리의 높이와 너비  - BOJ Gold2
+date:   2023-03-06 02:23:00 +0900
+categories:   Algorithm
+---
+
+# 트리의 높이와 너비
+
+__[트리의 높이와 너비]__ 이번 문제는 백준 골드 2단계 문제로 엄청난 사고력을 필요로하지는 않지만 __이진 트리__ , __Inorder__ , __BFS__ , __Regression__ 등등 다양한 개념이 섞여있어 높은 난이도를 갖는 듯 했다.
+
+__[트리의 높이와 너비 문제 보러가기]__
+
+<br>
+
+# 풀이 과정
+
+1. 우선 트리를 그린다.
+
+    1-1. 트리 자료구조를 만든다.
+
+    1-2. 루트 노드를 찾는다.
+
+    1-3. 루트 노드부터 BFS 탐색을 통해 (Queue 활용) 트리를 그린다.
+
+2. 트리를 탐색한다.
+
+    2-1. Inorder Traversal 을 통해 가장 좌측부터 트리를 탐색한다 (Regression 활용).
+
+    2-2. 가장 넓이가 넓은 층을 기록한다.
+
+
+<br>
+
+대략적인 풀이 방법은 위와 같으며 넓이가 같은 경우, 노드가 하나인 경우 등등 상황도 고려하면 문제 없이 해결 할 수 있다.
+
+[사다리 조작]: https://www.acmicpc.net/problem/2250
+
+[사다리 조작 문제 보러가기]: https://www.acmicpc.net/problem/2250
+
+# 코드
+
+```kotlin
+// 2023-03-06
+// https://www.acmicpc.net/problem/2250
+
+val answerMap = mutableMapOf<Int, Int>()
+
+fun solution(input: List<List<Int>>) {
+    val map = mutableMapOf<Int, TNode>()
+
+    val rootCount = IntArray(input.size)
+    for (list in input) {
+        if (list[1] != -1) rootCount[list[1] - 1]++
+        if (list[2] != -1) rootCount[list[2] - 1]++
+    }
+
+    val queue = ArrayDeque<Int>()
+    var root = 0
+    for (i in rootCount.indices) {
+        if (rootCount[i] == 0) {
+            queue.addFirst(i + 1)
+            map[i + 1] = TNode()
+            root = i + 1
+            break
+        }
+    }
+
+    while (queue.isNotEmpty()) {
+        val num = queue.removeLast()
+        val node = map[num]
+        if (input[num - 1][1] != -1) {
+            val lNode = TNode()
+            node!!.lNode = lNode
+            map[input[num - 1][1]] = lNode
+            queue.addFirst(input[num - 1][1])
+        }
+        if (input[num - 1][2] != -1) {
+            val rNode = TNode()
+            node!!.rNode = rNode
+            map[input[num - 1][2]] = rNode
+            queue.addFirst(input[num - 1][2])
+        }
+    }
+
+    dfs(map[root]!!, 1)
+    println("${answer.first} ${answer.second}")
+}
+
+fun main() {
+    solution(Array(readLine()!!.toInt()) { readLine()!!.split(" ").map { it.toInt() } }.sortedBy { it.first() })
+}
+
+class TNode() {
+    var lNode: TNode? = null
+    var rNode: TNode? = null
+}
+
+var answer = Pair(1, 1)
+var count = 0
+
+fun dfs(node: TNode, depth: Int) {
+    node.lNode?.run {
+        dfs(this, depth + 1)
+    }
+
+    count++
+    if (answerMap[depth] == null) {
+        answerMap[depth] = count
+    } else {
+        if (answer.second <= count - answerMap[depth]!! + 1) {
+            answer = Pair(depth, count - answerMap[depth]!! + 1)
+        }
+    }
+
+    node.rNode?.run {
+        dfs(this, depth + 1)
+    }
+}
+
+```
