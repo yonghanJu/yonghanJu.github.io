@@ -1,0 +1,162 @@
+---
+layout: post
+title:  Compose로 졸프 만들기 Part.2 - Layouts and Modifiers
+date:   2023-04-21 01:53:00 +0900
+categories:   Android
+---
+
+# 레이아웃과 modifier 정리
+
+### Row, Column 배치
+
+layout 컴포저블 안에 컴포저블들을 배치할 수 있다.
+
+row, column, box 등의 레이아웃 컴포저블이 있으며 row, column의 정렬 기준은 아래 사진과 같다.
+
+<img width="1236" alt="스크린샷 2023-04-20 오후 11 55 35" src="https://user-images.githubusercontent.com/65655825/233405395-8bbb78f6-76f9-4be9-b9de-53f14ac9ac9b.png">
+
+<br>
+
+만약 배치 정보를 통해 레이아웃의 자식 컴포넌트의 위치를 정할 수 있다.
+
+__예외__ 적인 컴포저블을 만들고 싶다면 아래 사진과 같이 자식 컴포저블의 __Modifier.align__ 을 설정해주면 된다.
+
+<img width="761" alt="image" src="https://user-images.githubusercontent.com/65655825/233406325-cec0ef82-d8a8-4802-a630-cdd291eeea74.png">
+
+<br>
+
+### 크기 및 비중
+
+- weight()
+
+~~~kotlin
+Modifier.weight() // 가중치 설정
+~~~
+
+<img width="1166" alt="image" src="https://user-images.githubusercontent.com/65655825/233406903-8cabaecc-659b-4e40-8848-67ec41ccd894.png">
+
+<br>
+
+- screenWidth
+
+<img width="1166" alt="image" src="https://user-images.githubusercontent.com/65655825/233407004-75c9ccc9-eaf9-43e6-ae59-eecaf6dc6648.png">
+
+<br>
+
+- fillMaxSize()
+  상위 컴포저블로부터 사용할 수 있는 가장 큰 면적을 차지하도록 함.
+  Box 의 경우 자식의 크기가 Box 크기에 영향을 미치는데 자식이 fillMaxSize()를 갖으면 Box가 가능한 큰 면적을 차지함.
+
+- matchParentSize()
+  Box 안에서만 쓸 수 있음(BoxScope interface에 포함됨)
+  Box 크기를 키우지 않고 Box의 크기에 맞춰 자식 크기가 결정됨.
+
+# From Data to UI
+
+데이터로부터 화면을 그리는데 아래 3가지 단계를 거치게 된다.
+
+1. Composition
+2. Layout
+3. Drawing
+
+<img width="1347" alt="image" src="https://user-images.githubusercontent.com/65655825/233409687-30e8fe5b-40f5-4e51-9025-0c1c89d85785.png">
+
+<br>
+
+- Composition
+
+컴포지션 단계에서는 아래 그림과 같이 Layout 컴포저블 함수들을 __UI tree__ 의 __layout node__ 로 만든다.
+
+하나의 Layout 컴포저블은 하나의 layout node가 된다.
+
+<img width="1055" alt="image" src="https://user-images.githubusercontent.com/65655825/233410583-34decbd9-a9fa-4453-abd1-431d22482557.png">
+
+<br>
+
+- Layout
+
+Layout 단계에서는 3단계의 알고리즘에 따라 __layout node__ 의 배치를 결정한다.
+
+1. 자식이 있는지 확인.
+2. 자신의 크기를 결정한다.(width, height, x, y)
+3. 자식이 있다면(layout의 경우) 자식들의 내부 배치를 결정한다.
+
+<br>
+
+위 알고리즘을 따라서 __UI tree__ 안의 모든 __layout node__ 의 배치를 결정하면 모든 __node__ 는 정학히 __한 번__
+ 만 방문한다.
+
+즉, __UI tree__ 형태가 복잡해져도 성능이 기하급수적으로 저하되지 않고 선형적인 부답을 갖게되는 장점이 있다.
+
+
+<img width="1055" alt="image" src="https://user-images.githubusercontent.com/65655825/233411351-cc651448-9207-4898-bfb2-7222d34ce19a.png">
+
+<br>
+
+- Drawing
+
+배치가 완료된 node를 렌더링한다.
+
+__clip()__ 같은 __Modifier__ 가 적용될 수 있으며 데이터에 따라 화면에 그려지게 된다.
+
+<img width="1055" alt="image" src="https://user-images.githubusercontent.com/65655825/233410089-a92fe087-3e50-471d-9c0b-0dc2b3aa54d4.png">
+
+<br>
+
+# Modifier Order - modfier 체이닝 및 순서의 중요성
+
+UI를 그리는 3가지 단계중 __Layout__ 단계를 깊이 있게 살펴보자.
+
+- Constraints
+
+  UI tree 에서 부모가 자식에게 할당하는 면적의 제약(minimum, maximum)
+
+  - unbounded: 제약이 없음, 무한
+  - exact: 정확한 수치로 제약 되어있음
+  - combined: 위 제약이 섞여 있음
+
+<br>
+
+부모가 자식에게 constraints를 준다면 자식은 거스를 수 없다. 
+
+즉, 최대 제약보다 큰 이미지를 넣어도 최대 값을 넘길 수 없고 최소 제약보다 작은 size를 자식에게 할당해도 최소 제약 만큼 확대된다.
+
+<br>
+
+Modifier의 체이닝 순서에 따라서 Constraints가 달라지므로 순서에 유의해야한다.
+
+- size(50.dp)를 넣었지만 최소 제약에 맞춰 확대된 경우
+
+<img width="1226" alt="image" src="https://user-images.githubusercontent.com/65655825/233422946-97115238-49d7-4b79-a34b-e1bdeac38c90.png">
+
+<br>
+
+- wrapContentSize() Modifier를 설정해 최소 제약을 0으로 바꿔 size(50.dp)를 지킨 경우
+- requireSize 를 통해 최대 제약을 넘길 수도 있음
+
+
+<img width="1226" alt="image" src="https://user-images.githubusercontent.com/65655825/233423005-7458bcf3-2af8-4b87-9ff2-0c9e3b96bbfc.png">
+
+<br>
+
+- clip().padding(10.dp) 순서 때문에 동그라미가 짤린 경우
+
+<img width="1226" alt="image" src="https://user-images.githubusercontent.com/65655825/233423555-a0edb80a-afbd-4515-b6e8-90ddbd2d7446.png">
+
+<br>
+
+# Subcompose
+
+UI 그리는 3단계 중 2단계 Layout 안에서 실행 됨.
+
+보이지 않는 UI를 나중에 바로 그리지 않음.
+
+부모 Layout에 크기와 자식의 Layout의 크기를 통해 최대 들어갈 수 있는 자식의 수를 결정, 수 만큼 먼저 그린다.
+
+컴포지션보다 측정이 먼저 진행되고 이렇게 지연된 컴포지션이 Subcomposition
+
+<img width="1054" alt="image" src="https://user-images.githubusercontent.com/65655825/233427889-aea3c066-4b8e-4426-bec1-25425cab58dd.png">
+
+<br>
+
+참고: https://www.youtube.com/watch?v=xc8nAcVvpxY
