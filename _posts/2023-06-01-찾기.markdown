@@ -1,0 +1,114 @@
+---
+layout: post
+title:  String - BOJ 1786 Platinum5
+date:   2023-06-01 13:40:00 +0900
+categories:   Algorithm
+---
+
+# 찾기
+
+__[찾기]__ 문제는 문자열 매치 알고리즘을 풀어내는 문제이다.
+
+특이한 점은 문제 설명 자체에서 알고리즘을 설명해주고 해당 알고리즘을 구현하기만 하면 된다는 것이다.
+
+일반적인 문자열 찾기 알고리즘의 경우 __시간복잡도 = 텍스트 길이 * 패턴 길이__ 가 되지만 해당 알고리즘을 적용하는 경우 __시간 복잡도 = 텍스트 길이 + 문자열 길이__ 이 될 수 있어서 시간 초과가 발생하지 않는다.
+
+<br>
+
+# 풀이 과정
+
+풀이 과정은 크게 2단계로 나눈다.
+
+1. 패턴에서 중복되는 범위를 기록하는 부분
+    - pattern[1..k] = pattern[j-k+1, j] 인 최대 k를 저장하는 과정
+
+2. 패턴의 중복된 부분을 활용해 전체 텍스트를 탐색하는 부분
+
+<br>
+
+
+1번과 2번 모두 startIndex, size 두개의 변수를 사용해서 while 문을 돌면서 문자열을 탐색하는게 핵심이다.
+
+
+
+[찾기]: https://www.acmicpc.net/problem/1786
+
+[찾기 문제 보러가기]: https://www.acmicpc.net/problem/1786
+
+# 코드
+
+```kotlin
+// https://www.acmicpc.net/problem/1786
+// 2023-06-01
+
+fun main() {
+    val s = Solution()
+    s.solution(readln(), readln())
+}
+
+class Solution {
+
+    fun solution(text: String, pattern: String): Int {
+        val pDubList = IntArray(pattern.length)
+        val answer = mutableListOf<Int>()
+
+        var startIndex = 1
+        var size = 0
+        
+        // 1번 부분
+        // pattern[1..k] = pattern[j-k+1, j] 인 최대 k를 저장하는 과정
+        while (startIndex + size < pattern.length) {
+            if (pattern[size] == pattern[startIndex + size]) { 
+                // 중복되는 경우
+                pDubList[startIndex + size] = size + 1
+                size++
+            } else {
+                // 중복되지 않는 경우
+                if (size == 0) { 
+                    // 중복이 1도 없을 때
+                    startIndex++
+                    continue
+                } else {
+                    // 중복이 끝나는 경우
+                    startIndex += size - pDubList[size - 1]
+                    size = pDubList[size - 1]
+                }
+            }
+        }
+
+        // 2번 과정
+        // 기록한 패턴 정보를 활용해 전체 문자열을 탐색
+        var index = 0
+        var matched = 0
+        while (index + matched < text.length) {
+            if (text[index + matched] != pattern[matched]) {
+                // 문자열과 패턴이 불일치 할 때
+                if (matched == 0) {
+                    // 1개도 맞는게 없을 때
+                    index++
+                } else {
+                    // 맞는게 있을 때, 중복을 확인해서 그만큼 포인터를 이동
+                    index += matched - pDubList[matched - 1]
+                    matched = pDubList[matched - 1]
+                }
+                continue
+            } else {
+                // 문자열이 일치할 때 matched 사이즈 증가
+                matched++
+            }
+            if (matched == pattern.length) {
+                // 문자열 전부 일치시 answer에 추가 및 중복 만큼 포인터 이동
+                answer.add(index + 1)
+                index += matched - pDubList[matched - 1]
+                matched = pDubList[matched - 1]
+            }
+        }
+
+        println(answer.size)
+        answer.forEach {
+            print("$it ")
+        }
+        return answer.size
+    }
+}
+```
