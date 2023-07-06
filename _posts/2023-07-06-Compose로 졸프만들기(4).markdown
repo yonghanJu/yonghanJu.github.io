@@ -40,8 +40,6 @@ __단점__ : 앱 성능 저하, 렌더링 과부화, 메모리 누수
 
 > 아이탬마다 네이버 지도 객체를 생성하고 이미지와 경로를 다시 그려야 하기 때문에 성능, 메모리 누수 발생
 
-@@@실제 테스트 사진@@@@@@@
-
 <br>
 
 ---
@@ -117,24 +115,29 @@ __java.lang.IllegalArgumentException: Software rendering doesn't support hardwar
 
 ### __HARDWARE BITMAP??__
 
-아래 공식 문서를 확인해보면 Harware Bitmap은 오직 그래픽 메모리안에 픽셀정보가 저장되며 오직 화면에 띄울때만 최적화되었다고 나온다.
+[Android 공식 문서]를 확인해보면 Harware Bitmap은 오직 그래픽 메모리안에 픽셀정보가 저장되며 오직 화면에 띄울때만 최적화되었다고 나온다.
 
-https://developer.android.com/reference/android/graphics/Bitmap.Config.html#HARDWARE
+<br>
+
+[Android 공식 문서]: https://developer.android.com/reference/android/graphics/Bitmap.Config.html#HARDWARE
 
 > Special configuration, when bitmap is stored only in graphic memory. Bitmaps in this configuration are always immutable. It is optimal for cases, when the only operation with the bitmap is to draw it on a screen.
 
+<br>
 
 일반적으로 애플리케이션 메모리(픽셀 바이트 배열)에 픽셀 데이터 사본 하나와 그래픽 메모리(픽셀이 GPU에 업로드된 후)에 하나의 사본이 있습니다. 하드웨어 비트맵은 GPU에 업로드된 복사본만 유지합니다.
 
 그래픽 메모리에 픽셀 데이터를 저장한다는 것은 픽셀 데이터에 쉽게 액세스할 수 없다는 것을 의미하며, 경우에 따라 예외가 발생할 수 있습니다.
 
----
+<br>
 
-아래 __Glide__ 공식 문서는 `Software rendering doesn't support hardware bitmaps` 예외를 발생시킬 수 있는 상황과 일부 대처 방법을 정의했고 이에 따라 코드를 수정했다.
+## __Solution__
+
+[__Glide__ 공식 문서]는 `Software rendering doesn't support hardware bitmaps` 예외를 발생시킬 수 있는 상황과 일부 대처 방법을 정의했고 이에 따라 코드를 수정했다.
 
 스크린샷을 위해서는 Android 8.0 Oreo(API 26) 이상 버전에서 `PixelCopy.request()`를 사용하면 된다.
 
-https://bumptech.github.io/glide/doc/hardwarebitmaps.html#whats-broken-when-we-use-hardware-bitmaps
+[__Glide__ 공식 문서]: https://bumptech.github.io/glide/doc/hardwarebitmaps.html#whats-broken-when-we-use-hardware-bitmaps
 
 ```kotlin
     composableBounds = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
