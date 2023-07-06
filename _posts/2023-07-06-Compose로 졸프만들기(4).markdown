@@ -1,0 +1,275 @@
+---
+layout: post
+title:  Compose로 졸프 만들기 Part.4 - 컴포저블 캡쳐 라이브러리 배포 트러블 슈팅, Hardware Bitmap (Software rendering doesn't support hardware bitmaps)
+date:   2023-07-06 19:39:00 +0900
+categories:   Android
+---
+
+## 프로젝트 요구사항
+
+- 네이버 맵을 사용해서 달린 경로를 지도와 함께 보여줘야 함(포스팅 기능)
+
+네이버 지도 API PathOverlay.setCoords() 를 활용해서 쉽게 구현 가능
+하지만 __지도 대신 사용자가 원하는 이미지로 배경 선택 가능__ 하도록 만들어야 한다.
+
+아래 사진이 해당 기능 모습이다.
+
+![image](https://github.com/Team-Walkie/Walkie/assets/65655825/e9ad7800-fc71-4ee4-ac67-fb85553b866f)
+
+<br>
+
+---
+
+
+<br>
+
+# 시도했던 방법...
+
+__각 아이탬마다 NaverMap 을 보여준다__
+
+아래 제공되는 API 들로 지도 객체를 하나의 아이탬으로 보고 배경 이미지, 경로 등을 그리는 방법이다.
+
+<pre><code>PathOverlay.setCoords() // 경로 생성 가능
+GroundOverlay.setImage() // 배경 이미지 선택 가능</code></pre>
+
+<br>
+
+__장점__ : 일관된 방식으로 지도, 사진을 모두 배경으로 사용할 수 있으며 경로 또한 일관된 방식으로 보여줄 수 있다.
+
+__단점__ : 앱 성능 저하, 렌더링 과부화, 메모리 누수 
+
+> 아이탬마다 네이버 지도 객체를 생성하고 이미지와 경로를 다시 그려야 하기 때문에 성능, 메모리 누수 발생
+
+@@@실제 테스트 사진@@@@@@@
+
+<br>
+
+---
+
+# 채택된 개선 방안 
+
+__네이버 지도 배경을 캡쳐해서 사용__
+
+달리기 결과를 확인하고 수정하는 페이지에서 지도 하나만을 사용, 포스팅할 땐 지도 스크린샷을 제공해서 저장한다.
+
+아래 코드는 위 채택된 방법을 처음 구현했던 코드이다.
+
+
+```kotlin
+// The CompositionLocal containing the current Compose View.
+val view = LocalView.current
+
+// Composable의 위치 정보를 Rect로 받기
+var composableBounds by remember {
+    mutableStateOf<Rect?>(null)
+}
+Modifier.onGloballyPositioned {
+    composableBounds = it.boundsInWindow()
+}
+
+LaunchedEffect(true) {
+    val bmp = Bitmap.createBitmap(
+        view.width,
+        view.height,
+        Bitmap.Config.ARGB_8888,
+    ).applyCanvas {
+        view.draw(this)
+    }
+}
+```
+
+<br>
+
+- __컴포저블 위치 정보를 Rect로 받는 법__
+    OnGloballyPositionedModifier는 Modifier의 일종으로, 콘텐츠의 전역 포지션이 변경되었을 때 레이아웃의 최종 LayoutCoordinates와 함께 onGloballyPositioned 콜백을 호출한다. 좌표를 포함하고 있는 이 콜백은 Composition(구성)이 끝났을 때 호출 됨을 명심하자.
+
+```kotlin
+Column(
+    Modifier.onGloballyPositioned { coordinates ->
+        // Column의 사이즈
+        coordinates.size
+        // 애플리케이션 윈도우에 상대적인 Column의 포지션
+        coordinates.positionInWindow()
+        // 컴포즈 최상위에 상대적인 Column의 포지션
+        coordinates.positionInRoot()
+        // 레이아웃에 제공되는 정렬 라인 (Column의 경우 비어있음)
+        coordinates.providedAlignmentLines
+        //  Column의 부모에 해당하는 LayoutCoordinates 인스턴스
+        coordinates.parentLayoutCoordinates
+    }
+) {
+...
+}
+```
+
+<br>
+
+---
+
+## __예외 발생__
+
+__java.lang.IllegalArgumentException: Software rendering doesn't support hardware bitmaps__
+
+
+<img width="913" alt="스크린샷 에러" src="https://github.com/fornewid/naver-map-compose/assets/65655825/5b23a315-5875-48b0-9059-a8101083a0d7">
+
+<br>
+
+### __HARDWARE BITMAP??__
+
+아래 공식 문서를 확인해보면 Harware Bitmap은 오직 그래픽 메모리안에 픽셀정보가 저장되며 오직 화면에 띄울때만 최적화되었다고 나온다.
+
+https://developer.android.com/reference/android/graphics/Bitmap.Config.html#HARDWARE
+
+> Special configuration, when bitmap is stored only in graphic memory. Bitmaps in this configuration are always immutable. It is optimal for cases, when the only operation with the bitmap is to draw it on a screen.
+
+
+일반적으로 애플리케이션 메모리(픽셀 바이트 배열)에 픽셀 데이터 사본 하나와 그래픽 메모리(픽셀이 GPU에 업로드된 후)에 하나의 사본이 있습니다. 하드웨어 비트맵은 GPU에 업로드된 복사본만 유지합니다.
+
+그래픽 메모리에 픽셀 데이터를 저장한다는 것은 픽셀 데이터에 쉽게 액세스할 수 없다는 것을 의미하며, 경우에 따라 예외가 발생할 수 있습니다.
+
+---
+
+아래 __Glide__ 공식 문서는 `Software rendering doesn't support hardware bitmaps` 예외를 발생시킬 수 있는 상황과 일부 대처 방법을 정의했고 이에 따라 코드를 수정했다.
+
+스크린샷을 위해서는 Android 8.0 Oreo(API 26) 이상 버전에서 `PixelCopy.request()`를 사용하면 된다.
+
+https://bumptech.github.io/glide/doc/hardwarebitmaps.html#whats-broken-when-we-use-hardware-bitmaps
+
+```kotlin
+    composableBounds = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        it.boundsInWindow()
+    } else {
+        it.boundsInRoot()
+    }
+    
+    // Android 8.0 Oreo(API 26) 버전 이후는 PixelCopy.request() API를 사용해야함
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        PixelCopy.request(
+            (view.context as Activity).window,
+            bounds.toAndroidRect(),
+            bitmap,
+            {},
+            Handler(Looper.getMainLooper())
+        )
+    } else {
+        val canvas = Canvas(bitmap)
+            .apply {
+                translate(-bounds.left, -bounds.top)
+            }
+        this.draw(canvas)
+        canvas.setBitmap(null)
+    }
+```
+
+<br>
+
+---
+
+
+##  __캡쳐 라이브러리 배포__
+
+컴포저블로 만든 화면을 캡쳐하는 코드를 재활용하기 위해 모듈화, 배포를 준비했다.
+
+- __CaptureReusult__ : sealed Class로 `Initialized`, `Success`, `Error` 의 하위 타입을 갖는다.
+
+```kotlin
+sealed class CaptureResult {
+    object Initialized : CaptureResult()
+    data class Success internal constructor(val bitmap: Bitmap) : CaptureResult()
+    data class Error internal constructor(val exception: Exception) : CaptureResult()
+}
+```
+
+<br>
+
+- __CaptureState__ : CaptureReusult state 형태로 갖고있으며 `capture()` 함수 노출해 `Capture` 의 `content`를 캡쳐함.
+
+```kotlin
+class CaptureState internal constructor() {
+
+    val state = mutableStateOf<CaptureResult>(CaptureResult.Initialized)
+
+    //...
+    
+    fun capture() {
+        captureBlock?.invoke()
+    }
+}
+
+@Composable
+fun rememberCaptureState() = remember {
+    CaptureState()
+}
+```
+
+<br>
+
+- __Capture__ : `@Composable function`으로 CaptureState를 매개변수로 받고 `contents`가 캡쳐 가능하다. 캡쳐된 화면은 Bitmap의 형태로 `captureState.state : CaptureReusult.Success(bitmap: Bitmap)`에서 사용 가능하다.
+
+<br>
+
+---
+
+[CaptureComposable Github Repo]: https://github.com/yonghanJu/CaptureComposable/tree/v1.0.2
+
+# [CaptureComposable Github Repo]
+
+[![](https://jitpack.io/v/yonghanJu/CaptureComposable.svg)](https://jitpack.io/#yonghanJu/CaptureComposable)
+
+Library for capturing Composable components  
+
+- __app module__ is demo app
+
+- __capture module__ is Android Library for capturing composable contains and contains `CaptureState`, `CaptureResult`, `@Composable Capture`
+
+
+## How to
+To get a Git project into your build:
+
+### Step 1. Add the JitPack repository to your build file
+
+Add it in your root build.gradle at the end of repositories:
+```kotlin
+// root level settings.gradle.kts
+repositories {
+    // ...
+    maven("https://jitpack.io")
+}
+```
+
+### Step 2. Add the dependency
+```kotlin
+// module level build.gradle.kts 
+dependencies {
+    val latestVersion = "1.0.2" 
+    implementation("com.github.yonghanJu:CaptureComposable:$latestVersion")
+}
+```
+
+<br>
+
+## Example Code
+```kotlin
+val captureState = rememberCaptureState()
+
+Capture(
+    modifier = Modifier
+    captureState = captureState,
+) {
+    // @Composable content
+}
+
+// Captured
+Button(onClick = { captureState.capture() })
+
+// ...
+
+// you can use these
+captureState.bitmap // captured bitmap
+captureState.state // capturedState(Initialized, Success(bitmap), Error(e))
+```
+
+## 😎 동작화면
+<img src="https://github.com/yonghanJu/CaptureComposable/assets/65655825/f80e253a-74de-4d11-af78-c6a9b4ac270c" width="250" height="500"/>
+
