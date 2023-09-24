@@ -19,7 +19,7 @@ permalink: /about/
 
 &nbsp;&nbsp;더 나은 세상을 만들기 위해 노력하는 안드로이드 개발자 주용한입니다.
 
-
+<br>
 
 ## Experience
 
