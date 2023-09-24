@@ -1,0 +1,417 @@
+---
+layout: post
+title:  Compose로 졸프 만들기 Part.4 - Side-Effect
+date:   2023-09-25 00:01:00 +0900
+categories:   Android
+---
+
+## Side Effect란?
+
+__Side-Effect__ 란 __Composable Function Scope__ 밖에서 일어나는 모든 상태 변화를 말한다.
+
+선언형 UI인 Jetpack Compose로 작성된 코드는 __Composable Scope__ 안에서 UI를 나타내지만 일회성 이벤트, 네트워크 콜, flow 수집 등 작업이 들어가는 경우가 생긴다.
+
+하지만 해당 코드를 일반적인 __Composable Scope__ 안에서 실행하게 된다면 의도와 맞지 않게 동작하게 될 것이다.
+
+```kotlin
+var count = 0 // ex) variable in viewModel
+
+@Composable
+fun InfoScreen(color: Color) {
+   val text = networkCall(color)
+   count++
+   Text(text)
+   // ...
+}
+```
+
+특정 화면에서 1회성으로 네트워크 요청을 한 뒤 화면에 보여주고 싶은 경우 위 코드와 같이 작성하게 된다면 의도한 것 보다 더 많은 경우에서 네트워크 콜이 일어날 것이다.
+
+color 값이 바뀔 때 __Recomposition__ 이 일어나지만 color값이 바뀌지 않은 다양한 상황에서도 __Recomposition__ 이 일어날 수 있기 때문이다.
+
+> 또한 __count__ 변수는 색상이 변경된 횟수를 기록하기 위해 만들어졌지만 컴포저블 스코프 바깥에 정의된 side effect 가 된다. 
+> 따라서 __Side Effect__ 를 잘 관리하지 않는다면 정상적으로 작동하지 않고 예기치 못한 오류를 발생할 수 있다.
+
+<br>
+
+이러한 문제점들을 해결하기 위해 아래와 같은 여러 API들이 제공된다.
+
+<br>
+
+## LaunchedEffect
+
+LaunchedEffect가 컴포지션에 들어가면 코루틴을 시작하고 컴포지션을 떠날 때 취소된다. 
+
+LaunchedEffect는 여러 키를 매개변수로 사용하며, 키 중 하나라도 변경되면 기존 코루틴을 취소하고 다시 시작한다.
+
+이는 UI 스레드를 차단하지 않고 네트워크 호출이나 데이터베이스 업데이트와 같은 __side-effect__ 를 수행하는 데 유용하다.
+
+처음 접하는 API기 때문에 내부적으로 어떻게 구현되어 있어서 위와 같은 __side-effect__ 관리를 도와주는지 확인하기 위해 내부 코드를 살펴보자.
+
+```kotlin
+@Composable
+fun LaunchedEffect(
+    key1: Any?,
+    block: suspend CoroutineScope.() -> Unit
+) {
+    val applyContext = currentComposer.applyCoroutineContext
+    remember(key1) { LaunchedEffectImpl(applyContext, block) }
+}
+
+// SampleCode
+LaunchedEfect(color) { count++ }
+```
+
+LaunchedEffect 또한 하나의 컴포저블 함수이므로 값이 매개변수가 변경될 때 필수적으로 __Recomposition__ 이 일어난다.
+
+내부 코드를 보면 매개변수로 __key__ 값을 받는데 이때 __key__ 을 remeber() 함수의 __key__ 값으로 사용하고 __LaunchedEffect__ 구현체인 __LaunchedEffectImpl__ 오브젝트를 생성하는 람다를 두번째 파라미터로 받는다.
+
+__remember__ 함수의 시그니처를 살펴보자
+
+<br>
+
+```kotlin
+@Composable
+inline fun <T : Any?> remember(crossinline calculation: @DisallowComposableCalls () -> T): T
+```
+
+__remember__ 함수는 __key__ 값이 변경되지 않으면 기존과 같은 __calculation__ 의 결과<T> 를 반환하며 
+__key__ 값이 달라진다면 __calculation__ 를 다시 실행해 초기값을 반환한다. 
+
+### @DisallowComposableCalls
+
+또한 __calculation__ 에는 __@DisallowComposableCalls__ 어노테이션이 붙어있어서 내부에 __Composable Function__ 이 실행될 수 없다.
+
+이는 컴포저블 스코프 바깥에서 코루틴을 활용해 상태 변환를 변환하기 위해서 또 다른 컴포저블의 호출을 막아 준다. 
+
+<br>
+
+__remeber__ 을 통해 __LaunchedEffectImpl__ 구현체를 저장하고 같은 __key__ 값에 대해 같은 객체를 반환한다는 사실은 확인했으니 다음으로는 __LaunchedEffectImpl__ 구현체를 보자.
+
+
+```kotlin
+internal class LaunchedEffectImpl(
+    parentCoroutineContext: CoroutineContext,
+    private val task: suspend CoroutineScope.() -> Unit
+) : RememberObserver {
+    private val scope = CoroutineScope(parentCoroutineContext)
+    private var job: Job? = null
+
+    override fun onRemembered() {
+        job?.cancel("Old job was still running!")
+        job = scope.launch(block = task)
+    }
+
+    override fun onForgotten() {
+        job?.cancel()
+        job = null
+    }
+
+    override fun onAbandoned() {
+        job?.cancel()
+        job = null
+    }
+}
+```
+
+__RememberObserver__ 인터페이스 하나만을 구현해서 만들어졌으며 해당 인터페이스는 __onRemembered()__ __onForgotten()__ __onAbandoned()__ 세가지 함수만을 갖는다.
+
+__RememberObserver__ 구현체가 __remember__ 함수에 의해 저장되었을 때 해당 데이터의 저장 생명주기에 맞춰서(등록시 스코프.launch, 잊혀지거나 실패했을 때는 job?.cancel) 각각의 함수가 실행된다.
+ 
+<br>
+
+따라서 __LaunchedEffect__ 는 한마디로 __remeber__ 로부터 저장되는 코루틴 스코프를 실행하는 코드이며 __RememberObserver__ 를 구현해서 __Composition-Aware__ 하게 생명주기에 맞춰 코루틴 스코프를 중단, 재개해주는 역할을 한다.
+
+<br>
+
+처음에 작성했던 __Side-effect__ 가득했던 코드는 이제 아래와 같이 __Side-effect Free__ 하게 작성될 수 있다.
+
+```kotlin
+var count = 0 // ex) variable in viewModel
+
+@Composable
+fun InfoScreen(color: Color) {
+    var text by remember { mutableStateOf("") }
+    
+    LaunchedEffect(color) {
+        text = networkCall(color)
+        count++
+    }
+    Text(text)
+    // ...
+}
+```
+
+<br><br>
+
+
+## rememberCoroutineScope
+
+만약 컴포지션과 동시에 코루틴이 실행되지 않거나 컴포저블 스코프 바깥에서 코루틴을 사용하는 경우에는 __rememberCoroutineScope__ 를 사용하면 된다.
+
+```kotlin
+@Composable
+fun Screen() {
+    var scope = rememberCoroutineScope()
+    
+    Button(Modifier.click { 
+     scope.launch {
+        networkCall()
+    }})
+    
+    Text(text)
+    // ...
+}
+```
+
+__scope__를 갖는 컴포저블 함수의 생명주기에 따라 맞춰서 컴포지션에 의해 함수가 제거된다면 스코프의 작업을 취소시켜준다. 
+
+<br>
+
+## rememberUpdatedState
+
+컴포저블 함수의 매개변수가 변경되면 Launched는 다시 시작한다. 이때 LaunchedEffect 안에서 사용하는 변수가 rememberUpdatedState로 저장된 상태라면 기존 시간이 걸리는 작업은 이어가고(재시작하지 않고) 최신 갱신된 데이터를 그래도 사용할 수 있다.
+
+아래는 [rememberUpdatedState 공식 문서]의 예제 코드이다.
+
+<br>
+
+LandingScreen는 수 초가 지나서 사라지는 화면이라고 했을 때 __onTimeout__ 값이 바뀐 시점에서 다시 수 초를 세지 않도록 하기 위해서는 __rememberUpdatedState__ 를 사용하면된다.
+
+
+```kotlin
+@Composable
+fun LandingScreen(onTimeout: () -> Unit) {
+
+    // This will always refer to the latest onTimeout function that
+    // LandingScreen was recomposed with
+    val currentOnTimeout by rememberUpdatedState(onTimeout)
+
+    // Create an effect that matches the lifecycle of LandingScreen.
+    // If LandingScreen recomposes, the delay shouldn't start again.
+    LaunchedEffect(true) {
+        delay(SplashWaitTimeMillis)
+        currentOnTimeout()
+    }
+
+    /* Landing screen content */
+}
+```
+
+[rememberUpdatedState 공식 문서]: https://developer.android.com/jetpack/compose/side-effects?hl=en#rememberupdatedstate
+
+
+<br>
+
+## DisposableEffect
+
+DisposableEffect 컴포저블은 컴포저블 함수가 처음 생성될 때 효과를 실행하는 데 사용되며 컴포저블이 화면에서 제거되면 효과가 지워진다.
+
+다른 __side-effect__ api와 비슷하게 동작하며 __onDispose()__ 함수가 컴포저블 함수가 화면에서 사라질 때 생명주기 마지막에 실행되어 리소스를 제거해줄 수 있다는 장점이 있다.
+
+따라서 아래 예제처럼 리소스 할당을 직접 해제해줘야하는 __listner__ 를 제거해줄 수 있다.
+
+```kotlin
+@Composable
+fun MyComponent() {
+    val listener = remember { mutableStateOf<SomethingLister?>(null) }
+
+    DisposableEffect(Unit) {
+        val listener = startListening { 
+            // somrthing
+        }
+        onDispose {
+            listener.stopListening()
+        }
+    }
+    
+    // ...
+}
+```
+
+<br>
+
+## SideEffect
+
+이 SideEffect에 대한 이해는 아직 어렵다. 구글 공식 문서에서는 Firebase의 사용자 분석을 예로 들고 있다.
+
+Compose에서 관리되지 않는 객체(FirebaseAnalytics)와 Compose 상태를 공유하려면 성공적인 리컴포지션이 발생할 때마다 호출되는 SideEffect 컴포저블을 사용하세요.
+
+예를 들어 분석 라이브러리를 사용하면 모든 후속 분석 이벤트에 사용자 지정 메타데이터(이 예에서는 "사용자 속성")를 연결하여 사용자 모집단을 분류할 수 있습니다. 현재 사용자의 사용자 유형을 분석 라이브러리에 전달하려면 SideEffect를 사용하여 해당 값을 업데이트하세요.
+
+아래 코드의 주석과 함께 본다면 __SideEffect__ 동작, 사용예시는 다음과 같다.
+
+모든 컴포지션, 리컴포지션 마다 __SideEffect__ 가 호출되며 이때 현재 __State(userType)__ 를 게시할 수 있으며 이후 이벤트에서 state 값이 적용되는 것을 보장할 수 있다고 한다.
+
+```kotlin
+@Composable
+fun rememberFirebaseAnalytics(user: User): FirebaseAnalytics {
+    val analytics: FirebaseAnalytics = remember {
+        FirebaseAnalytics()
+    }
+
+    // On every successful composition, update FirebaseAnalytics with
+    // the userType from the current User, ensuring that future analytics
+    // events have this metadata attached
+    SideEffect {
+        analytics.setUserProperty("userType", user.userType)
+    }
+    return analytics
+}
+```
+
+<br>
+
+## produceState
+
+이름 그래도 __produceState__ 는 다른 컴포저블에서 사용할 State를 만들어 제공할 때 사용할 수 있다.
+
+이를 사용하여 Compose가 아닌 상태를 Compose 상태로 변환하며  __Flow__ , __LiveData__ , __RxJava__ 와 같은 외부 구독 기반 상태를 Composition로 가져온다.
+
+내부 코드를 같이 살펴보자.
+
+첫번째 인자로 __initialValue__ 를 받고 또 __key__ 와 __producer__ 를 받는다.
+__initialValue__ 를 초기값으로 갖는 __result__ 이름의 __state__ 변수를 내부적으로 갖고 __LaunchedEffect__ 안에서 __producer__ 실행시켜 __result__ 값을 갱신시킨다.
+또한 __producer__ 또는 __key__ 값이 바뀌면 __result__ 를 갱신시켜주는 역할을 한다.
+
+```kotlin
+@Composable
+fun <T> produceState(
+    initialValue: T,
+    key1: Any?,
+    producer: suspend ProduceStateScope<T>.() -> Unit
+): State<T> {
+    val result = remember { mutableStateOf(initialValue) } // 내부적으로 State 를 갖음
+    LaunchedEffect(key1) { // LaunchedEffect 를 열고 producer를 실행
+        ProduceStateScopeImpl(result, coroutineContext).producer()
+    }
+    return result
+}
+```
+
+아래 코드는 구글 공식 문서에서 제공하는 샘플코드이다.
+
+```kotlin
+@Composable
+fun loadNetworkImage(
+    url: String,
+    imageRepository: ImageRepository = ImageRepository()
+): State<Result<Image>> {
+
+    // Creates a State<T> with Result.Loading as initial value
+    // If either `url` or `imageRepository` changes, the running producer
+    // will cancel and will be re-launched with the new inputs.
+    return produceState<Result<Image>>(initialValue = Result.Loading, url, imageRepository) {
+
+        // In a coroutine, can make suspend calls
+        val image = imageRepository.load(url)
+
+        // Update State with either an Error or Success result.
+        // This will trigger a recomposition where this State is read
+        value = if (image == null) {
+            Result.Error
+        } else {
+            Result.Success(image)
+        }
+    }
+}
+```
+
+<br>
+
+## derivedStateOf
+
+단일 또는 여러 State를 또 다른 State으로 만드는 역할을 한다.
+
+실제 UI가 업데이트 되는 횟수보다 훨씬 많은 매개변수 또는 state 값 변경에 따른 __Recomposition__ 이 발생한다면 이를 막을 수 있다는 점에서 kotlin의 [distinctUntilChanged()]와 비슷하게 느껴질 수 있다고 하지만 나는 비슷한점을 잘 모르겠다.
+
+> [distinctUntilChanged()]은 Flow가 발행되더라도 실제 같은 값이 아니라면 collect 콜백을 실행하지 않도록 해준다. __StateFlow__ 는 이미 distinctUntilChanged() 처럼 행동한다.
+
+[distinctUntilChanged()]: https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/distinct-until-changed.html#:%7E:text=Returns%20flow%20where%20all%20subsequent,a%20StateFlow%20has%20no%20effect.
+
+<br>
+
+__derivedStateOf__ 를 사용할 때 각별히 조심해야 할 점이 있다.
+
+바로 kotlin 에서 __Flow.combine__ 처럼 사용해서는 안된다는 것이다. 그렇게 했을 때 매우 비효율적이며 쓸데없는 비용을 지출한다. __아래와 같은 코드는 작성해서는 안된다__
+
+실제로 아래에서 선언된 __fullNameBad__ __fullNameCorrect__ 변수는 똑같이 동작하지만 __derivedStateOf__ 를 사용한다면 더 많은 비용이 발생한다.
+
+> Caution: DerivativeStateOf는 비용이 많이 들기 때문에 결과가 변경되지 않은 경우 불필요한 재구성을 피하기 위해서만 사용해야 합니다.
+> 
+```kotlin
+// 잘못된 사용 예시
+// DO NOT USE. Incorrect usage of derivedStateOf.
+var firstName by remember { mutableStateOf("") }
+var lastName by remember { mutableStateOf("") }
+
+val fullNameBad by remember { derivedStateOf { "$firstName $lastName" } } // This is bad!!!
+val fullNameCorrect = "$firstName $lastName" // This is correct
+```
+
+<br>
+
+반면 아래와 같은 상황에서 사용하는 것이 올바른 방법이다.
+
+__messageList__ 를 매개변수로 받는 컴포저블 함수에서 __messageList__ 값은 변경되었지만 변경 내용과 관련이 없는 화면의 State를 관리할 때 __derivedStateOf__ 를 사용해주면 된다.
+
+```kotlin
+@Composable
+// When the messages parameter changes, the MessageList
+// composable recomposes. derivedStateOf does not
+// affect this recomposition.
+fun MessageList(messages: List<Message>) {
+    Box {
+        val listState = rememberLazyListState()
+
+        LazyColumn(state = listState) {
+            // ...
+        }
+
+        // Show the button if the first visible item is past
+        // the first item. We use a remembered derived state to
+        // minimize unnecessary compositions
+        val showButton by remember {
+            derivedStateOf {
+                listState.firstVisibleItemIndex > 0
+            }
+        }
+
+        AnimatedVisibility(visible = showButton) {
+            ScrollToTopButton()
+        }
+    }
+}
+```
+
+<br>
+
+## snapshotFlow
+
+앞서 나왔던 __produceState__ 는 Flow, Rxjava, LiveData 등을 __State__ 로 바꿔 제공해줬다면 __snapshotFlow__ 는 반대로 __state__ 를 __flow__ 로 변환해주는 역할을 한다.
+
+한가지 주목할 점은 이때 __Cold Flow__ 를 만든다는 점이다. 즉, __collect__ 가 호출되는 시점에서야 코드블럭이 실행된다. 사용 예시는 아래와 같다.
+
+
+```kotlin
+val listState = rememberLazyListState()
+
+LazyColumn(state = listState) {
+    // ...
+}
+
+LaunchedEffect(listState) {
+    snapshotFlow { listState.firstVisibleItemIndex } // listState 상태가 변경됨에 따라 호출
+        .map { index -> index > 0 }
+        .distinctUntilChanged()
+        .filter { it == true }
+        .collect {
+            MyAnalyticsService.sendScrolledPastFirstItemEvent()
+        }
+}
+```
+
+<br>
+
+구글 공식 문서를 토대로 기본적은 사용법과 역할을 정리한 글이었습니다만 몇몇 API 는 내부 코드를 살펴보면서 동작 원리를 알려주도록 노력했습니다.
+더 공부해서 코드 내부 동작에 대해 깊이있는 이해를 돕도록 노력하겠습니다. 읽어주셔서 감사합니다.

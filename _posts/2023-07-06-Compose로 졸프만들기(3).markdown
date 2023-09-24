@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  Compose로 졸프 만들기 Part.4 - 컴포저블 캡쳐 라이브러리 배포 트러블 슈팅, Hardware Bitmap (Software rendering doesn't support hardware bitmaps)
+title:  Compose로 졸프 만들기 Part.3 - 컴포저블 캡쳐 라이브러리 배포 트러블 슈팅, Hardware Bitmap (Software rendering doesn't support hardware bitmaps)
 date:   2023-07-06 19:39:00 +0900
 categories:   Android
 ---
