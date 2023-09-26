@@ -97,10 +97,12 @@ AAB가 구글 플레이 콘솔에서 서명을 해주기 때문에 보안적인 
 
 ## 5. PR 라벨 적용
 
+<img width="650" alt="7 배포성공" src="https://github.com/Team-Walkie/Walkie/assets/65655825/744c22c7-035e-4b16-a3ca-a91a5e1712a8">
+
 자동 배포는 성공했으나 원하지 않는 PR에서도 계속 APK 배포메일이 가져서 아래 코드를 추가해 __PR Label__ 을 통해 CD가 동작하도록 변경해주었다.
 
 ```yml
-f: ${{ github.event.label.name == 'Distribution' }}
+if: ${{ github.event.label.name == 'Distribution' }}
 ```
 
 ## 6. 완성된 CI/CD workflow
