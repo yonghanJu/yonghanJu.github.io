@@ -1,0 +1,213 @@
+---
+layout: post
+title:  Compose로 졸프 만들기 Part.5 - CI/CD, Firebase 배포 
+date:   2023-09-26 00:16:30 +0900
+categories:   Android
+---
+
+## Firebase Distribution
+
+앱 버전이 올라갈 때 마다 직접 apk를 추출하고 파이어베이스에 접속해서 apk를 올려서 테스터 배포를 하는 작업이 개발과 별개이면수 번거럽다고 생각이 들었다.
+
+따라서 PR을 날리면 자동으로 파이어베이스 테스터 배포까지 마치도록 CI/CD를 구성하도록 했다.(원래는 GitAction으로 Build 만 했음)
+
+<br>
+
+Git Action, Firebase, Google Could Platform 을 활용해 테스터 자동배포하는 과정이며
+
+[Firebase App Distribution] Git Action 오픈소스를 사용했다.
+
+[Firebase App Distribution]: https://github.com/marketplace/actions/firebase-app-distribution
+
+<br>
+
+## 1. Google Could Platform, Firebase 같은 계정으로 가입
+
+## 2. GCP Service Account 생성
+
+서비스 계정을 만들고 아래와 같이 __Firebase App distribution manager__ 권한을 준다.
+
+<img width="400" alt="2 서비스계정생성" src="https://github.com/Team-Walkie/Walkie/assets/65655825/2966734d-dce4-43fd-9243-1c8968939c47">
+
+<br>
+
+그렇게 아래와 같이 생성된 계정을 확인할 수 있다.
+
+<img width="400" alt="3  추가된 계정 확인" src="https://github.com/Team-Walkie/Walkie/assets/65655825/547726e5-5d73-4aa2-845f-bd097b68ff3f">
+
+<br>
+
+위 계정에 키를 만들어주고 저장한다.
+
+<img width="400" alt="4 서비스키 추가" src="https://github.com/Team-Walkie/Walkie/assets/65655825/3ab29b7e-2c50-47e9-b1ed-b857907f35e7">
+
+<br>
+
+## 3. Git Secret 에 Service Account Key 저장
+
+Git Secret에 __CREDENTIAL_FILE_CONTENT__ 라는 이름으로 __GCP Service Account Key__ 를 저장했다.
+
+<br>
+
+## 4. AAB 배포를 원한다면...
+
+아래와 같은 workflow step을 추가해서 .aab 파일을 만들어야한다.
+
+__KEYSTORE_FILE__ , __KEYSTORE_PASSWORD__ , __KEY_PASSWORD__ 3가지를 정보를 __Git Secret__ 에 추가적으로 저장해야한다.
+
+이때  __KEYSTORE_FILE__ 경우에는 읽지 못하는 파일이기 때문에 __base64__ 인코딩을 해준 파일을 업로드하면 된다. 친절히도 __signingKeyBase64__ 라는 이름의 변수로 받는다.
+
+<br>
+
+아래는 각각 base64 인코딩하는 커맨드와 Git Action 에서 AAB를 만드는 workflow 코드이다.
+
+```bash
+openssl base64 -in [keystore 파일명] -out [인코딩될 파일 이름]
+```
+
+```yml
+#      - name: Assemble release build
+#        run: ./gradlew bundleRelease
+#
+#      - name: Signing App Bundle
+#        uses: r0adkll/sign-android-release@v1
+#        with:
+#            releaseDirectory: app/build/outputs/bundle/release
+#            signingKeyBase64: ${{ secrets.KEYSTORE_FILE }}
+#            alias: ${{ secrets.KEY_ALIAS }}
+#            keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+#            keyPassword: ${{ secrets.KEY_PASSWORD }}
+```
+
+<br>
+
+## 테스트용으로 AAB 말고 APK를 채택한 이유
+
+AAB로 테스트를 하려고 했는데 AAB는 앱 서명을 Google Play에서 직접 해주기 때문에 APK를 만드려면 Google Play Console 개발자 계정까지 등록을 해줘야한다.
+
+AAB가 구글 플레이 콘솔에서 서명을 해주기 때문에 보안적인 측면에서 우수하고 console에서 기기 특성에 맞는 리소스만 apk에 합쳐주기 때문에 기기마다 각각 완성된 APK 파일의 크기가 더 적기 때문에 AAB를 통한 배포를 강제한다.
+
+하지만 테스트에 경우 디자이너, 기획자분들까직 각각 추가적인 기기 설정을 해주는 번거러움이 있어서 APK파일을 통해 테스트하기로 결정.
+
+<br>
+
+## 5. 파이어베이스 테스터그룹 추가
+
+파이어베이스 __App Distribution__ 에 들어가서 테스터 그룹을 만들고 테스트 APK 메일을 보낼 팀원들의 계정을 추가해준다.
+
+## 5. PR 라벨 적용
+
+자동 배포는 성공했으나 원하지 않는 PR에서도 계속 APK 배포메일이 가져서 아래 코드를 추가해 __PR Label__ 을 통해 CD가 동작하도록 변경해주었다.
+
+```yml
+f: ${{ github.event.label.name == 'Distribution' }}
+```
+
+## 6. 완성된 CI/CD workflow
+
+```yml
+# 기존에 사용하던 단순 Build CI
+name: Walkie Android CI
+on:
+  pull_request:
+    branches: [ "main", "develop", "compose/develop" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'zulu'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Create google-service
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > ./presentation/google-services.json
+
+      - name: Create Local Properties
+        run: echo '${{ secrets.LOCAL_PROPERTIES }}' > ./local.properties
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Build Debug APK
+        run: bash ./gradlew assembleDebug --stacktrace
+
+      - name: Assemble release build
+        run: ./gradlew bundleRelease
+
+      - name: Signing App Bundle
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.KEYSTORE_FILE }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - name: 테스트용 AAB artifact 업로드
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-release.aab
+          path: app/build/outputs/bundle/release/app-release.aab
+```
+
+
+<br>
+
+```yml
+# 새롭게 추가한 Firebase App Distribution CD
+name: Walkie Firebase Distribution
+on:
+  pull_request:
+    branches: [ "main", "develop", "compose/develop" ]
+    types: [ labeled ]
+
+jobs:
+  build:
+    if: ${{ github.event.label.name == 'Distribution' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'zulu'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Create google-service
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > ./presentation/google-services.json
+
+      - name: Create Local Properties
+        run: echo '${{ secrets.LOCAL_PROPERTIES }}' > ./local.properties
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Build Debug APK
+        run: bash ./gradlew assembleDebug --stacktrace
+
+      - name: Upload artifact to firebase app distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{secrets.FIREBASE_APP_ID}}
+          serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
+          groups: walkieDeveloper
+          file: app/build/outputs/apk/debug/app-debug.apk
+```
+
+<br>
+
+이상으로 __Firebase App Distribution__ 를 사용한 CI/CD 구성 회고를 마치겠습니다. 
+
+감사합니다.
