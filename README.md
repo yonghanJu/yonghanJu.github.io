@@ -21,6 +21,12 @@ permalink: /about/
 
 <br>
 
+## OpenSource Contribution
+
+- https://github.com/evant/kotlin-inject
+  
+- https://github.com/boguszpawlowski/ComposeCalendar
+
 ## Experience
 
 - 프로그래머스 __상위 5% 탑 프로그래머스__ 발탁
@@ -29,10 +35,11 @@ permalink: /about/
 
 - __네이버 커넥트 재단 부스트캠프 웹・모바일 7기 챌린지__ 수료
 
+- __Google Developer Student Club__ Konkuk 23-24 member
+
 - (주)거버넌스휴먼 외주 개발
 
      - 안드로이드 위치 기반 자동 신고 모듈 개발
-
 
 ## Competition
 
@@ -44,10 +51,6 @@ permalink: /about/
 
      - Calamares 오픈소스를 활용한 TmaxOS 인스톨러 모듈 개발
 
- 
-## OpenSource Contribution
-
-- https://github.com/boguszpawlowski/ComposeCalendar
 
 ## Stats & Level
 
