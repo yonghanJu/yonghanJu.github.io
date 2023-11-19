@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  ReComposition Counts 줄이고 렌더링 성능 향상시키기
+title:  Recomposition Counts 줄이고 렌더링 성능 향상시키기
 date:   2023-11-20 02:02:00 +0900
 categories:   Android
 ---
