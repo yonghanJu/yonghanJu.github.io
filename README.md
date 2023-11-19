@@ -19,13 +19,16 @@ permalink: /about/
 
 &nbsp;&nbsp;더 나은 세상을 만들기 위해 노력하는 안드로이드 개발자 주용한입니다.
 
-<br>
+<br><br>
 
 ## OpenSource Contribution
 
-- https://github.com/evant/kotlin-inject
-  
-- https://github.com/boguszpawlowski/ComposeCalendar
+- refactor code
+    - kotlin-inject: https://github.com/evant/kotlin-inject
+
+- fix docs
+    - webrtc-android: https://github.com/GetStream/webrtc-android
+    - ComposeCalendar: https://github.com/boguszpawlowski/ComposeCalendar
 
 ## Experience
 
