@@ -191,7 +191,7 @@ class EditViewModelTest {
 
 ### @After, @Before -> Rule 리펙토링
 
-- __리펙토링이 필요하다 생각한 이유__
+#### __리펙토링이 필요하다 생각한 이유__
 
 1. __@Before, @After__ 어노테이션 코드와 같은 역할을 하지만 로직이 분산됨.
 2. 테스트와 직접적인 연관이 없는 로직과 객체들이 공개됨.
@@ -241,11 +241,11 @@ class EditViewModelTest {
 
 ### 리펙토링 후 얻은 장점
 
-- __직접적인 테스트 이외의 책임을 테스트 코드애서 분리__
+- __책임 분리: 직접적인 테스트 이외의 책임을 테스트 코드애서 분리__
 
   객체의 생성이나 메모리 관리 같은 코드들이 많아져 테스트 클래스가 난독화되는 것을 방지할 수 있음
 
-- __실제로 사용되지 않고 생성에만 필요한 fake 객체를 감춤__
+- __캡슐화: 실제로 사용되지 않고 생성에만 필요한 fake 객체를 감춤__
 
   fakePhotoRepository, setRandomPhotoUseCase 같이 뷰모델 생성시에 필요하지만 직접 접근할 필요가 없는 객체들을 private 하게 감출 수 있다.
 
@@ -254,10 +254,7 @@ class EditViewModelTest {
 class EditViewModelTest {
 
     @get:Rule
-    val editViewModelTestRule = EditViewModelTestRule(
-        FakeUserRepository(),
-        FakePhotoRepository(),
-    )
+    val editViewModelTestRule = EditViewModelTestRule()
 
     @Test
     fun test1() = with(editViewModelTestRule){
@@ -267,17 +264,17 @@ class EditViewModelTest {
 
 // 테스트 룰
 // MainDispatcherRule을 상속해서 기존 동작(setMain)을 유지
-class EditViewModelTestRule(
-    val fakeUserRepository: UserRepository,             // 바깥으로 공개되는 객체
-    private val fakePhotoRepository: PhotoRepository,   // private으로 공개하지 않을 객체
-) : MainDispatcherRule() {
-
-    private lateinit var setRandomPhotoUseCase: SetRandomPhotoUseCase // private으로 공개하지 않을 객체
-    lateinit var editViewModel: EditViewModel
-
+class EditViewModelTestRule : MainDispatcherRule() {
+    
+    lateinit var editViewModel: EditViewModel               // 테스트코드에 공개 시킬 객체 
+    lateinit var fakeUserRepository: FakeUserRepository     // 테스트코드에 공개 시킬 객체 
+    
     override fun starting(description: Description) {
         super.starting(description)
-        setRandomPhotoUseCase = SetRandomPhotoUseCase(fakePhotoRepository, fakeUserRepository)
+
+        val fakePhotoRepository = FakePhotoRepository()
+        fakeUserRepository = FakeUserRepository()
+        val setRandomPhotoUseCase = SetRandomPhotoUseCase(fakePhotoRepository, fakeUserRepository)
         editViewModel = EditViewModel(
             fakeUserRepository,
             setRandomPhotoUseCase,
@@ -347,3 +344,4 @@ jobs:
 ```
 
 ---
+
