@@ -17,14 +17,16 @@ __제가 선택한 방법은 정답이 아니며 언제든 피드백 주시면 �
 
 ---
 
+<br>
+
 ## __Unit Test 작성__
 
 ### 의존성 추가
 
 viewModel 안에서 사용하는 로직은 대부분 Flow를 사용해 상태를 보관하기 때문에 아래와 같이 __kotlinx-coroutines-test__ 의존성을 추가해줘야 한다.
-그리고 Kotest 등 코틀린으로 작성된 테스트 라이브러리도 있지만 프로젝트 생성 시 기본으로 추가되어있는 Junit을 사용해 테스트를 진행해보자.
+Kotest 등 코틀린으로 작성된 테스트 라이브러리도 있지만 프로젝트 생성 시 기본으로 추가되어있는 Junit을 사용해 테스트를 진행해보자.
 
-추가적으로 collect 코루틴을 만드는 편리한 API와 흐름을 테스트하는 기타 편의 기능을 제공하는 서드 파티 Turbine 라이브러리도 추가해주자.
+추가적으로 collect 코루틴을 만드는 편리한 API와 Flow를 테스트하는 기타 편의 기능을 제공하는 서드파티 Turbine 라이브러리도 추가해주자.
 
 ```kotlin
     testImplementation("junit:junit:$junitVerison")
@@ -33,6 +35,10 @@ viewModel 안에서 사용하는 로직은 대부분 Flow를 사용해 상태를
 ```
 
 ---
+
+
+<br>
+
 
 ### 더블 만들기
 
@@ -61,7 +67,7 @@ class FakeTodoRepository : TodoRepository {
 }
 ```
 
-그리고 테스트를 하는 쪽에서느 해당 코드를 수집해줘야 하는데 공식문서에서 작성된 코드는 아래와 같다.
+그리고 테스트를 하는 쪽에서는 해당 코드를 수집해줘야 하는데 공식문서에서 작성된 코드는 아래와 같다.
 
 ```kotlin
     // Create an empty collector for the StateFlow
@@ -77,6 +83,10 @@ class FakeTodoRepository : TodoRepository {
 [테스트 중 Flow 수집하기]: https://developer.android.com/kotlin/flow/test?hl=ko#continuous-collection
 
 ---
+
+<br>
+
+
 
 ### 테스트 코드 작성하기
 
@@ -98,8 +108,9 @@ public fun runTest(
 ```
 
 <br>
+<br>
 
-- 뷰모델 테스트 코드 작성 및 실행 결과
+### 작성한 뷰모델 테스트 코드 및 이슈
 
 ```kotlin
 // ...
@@ -128,6 +139,8 @@ __EditViewModel__ 에서 랜덤한 사진을 가져오게하는 부분 테스트
 
 보아하니 테스트가 실행되는 코루틴 컨텍스트 메인으로 지정해주지 않아서 모듈 초기화에 실패했다는 것으로 판단된다.
 
+<br>
+
 실제로 __EditViewModel__ 에서 사용하고 있는 __userPhoto: StateFlow<String?>__ 객체의 선언부분을 보면  __viewModelScope__ 를 사용해서 stateFlow를 만드는데 뷰모델 스코프는 기본적으로 __Dispatcher.Main.immediate__ 디스페처를 사용하기 때문에 테스트가 안되는 것으로 이해된다.
 
 ```kotlin
@@ -148,6 +161,7 @@ __EditViewModel__ 에서 랜덤한 사진을 가져오게하는 부분 테스트
 그리고 테스트 클래스 안에 MainDispatcherRule 객체를 생성하고  ```@get:Rule``` 어노테이션을 붙여주고 테스트를 재실행하면 에러가 발생하지 않게 된다.
 
 ```kotlin
+// 테스트 룰
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainDispatcherRule(
     private val testDispatcher: TestDispatcher = UnconfinedTestDispatcher(),
@@ -161,6 +175,7 @@ class MainDispatcherRule(
     }
 }
 
+// 테스트 코드
 class EditViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule() 
@@ -169,6 +184,10 @@ class EditViewModelTest {
 ```
 
 ---
+
+<br>
+
+
 
 ### @After, @Before -> Rule 리펙토링
 
@@ -223,12 +242,12 @@ class EditViewModelTest {
 ### 리펙토링 후 얻은 장점
 
 - __직접적인 테스트 이외의 책임을 테스트 코드애서 분리__
-    
-    객체의 생성이나 메모리 관리 같은 코드들이 많아져 테스트 클래스가 난독화되는 것을 방지할 수 있음
+
+  객체의 생성이나 메모리 관리 같은 코드들이 많아져 테스트 클래스가 난독화되는 것을 방지할 수 있음
 
 - __실제로 사용되지 않고 생성에만 필요한 fake 객체를 감춤__
 
-    fakePhotoRepository, setRandomPhotoUseCase 같이 뷰모델 생성시에 필요하지만 직접 접근할 필요가 없는 객체들을 private 하게 감출 수 있다.
+  fakePhotoRepository, setRandomPhotoUseCase 같이 뷰모델 생성시에 필요하지만 직접 접근할 필요가 없는 객체들을 private 하게 감출 수 있다.
 
 ```kotlin
 // 책임 분리 리펙토링 테스트 코드
@@ -246,7 +265,7 @@ class EditViewModelTest {
     }
 }
 
-// EditViewModelTestRule.kt
+// 테스트 룰
 // MainDispatcherRule을 상속해서 기존 동작(setMain)을 유지
 class EditViewModelTestRule(
     val fakeUserRepository: UserRepository,             // 바깥으로 공개되는 객체
@@ -269,6 +288,8 @@ class EditViewModelTestRule(
 
 ---
 
+<br>
+
 ## 테스트 자동화
 
 ### GitAction으로 PR 단위로 테스트 수행
@@ -285,7 +306,7 @@ BDD는 서버로부터 UI를 형식을 제공받기 때문에 앱을 업데이�
 1. jdk 버전 호환 x, 11 -> 17로 업그레이드했더니 문제 해결
 2. local.properties 파일 읽기 실패
 
-    build.gradle 에서 api access token 을 로컬 프로퍼티에서 가져오고 있었기 때문에 git secret 에 추가해줬다.
+   build.gradle 에서 api access token 을 로컬 프로퍼티에서 가져오고 있었기 때문에 git secret 에 추가해줬다.
 
 <br>
 
