@@ -5,6 +5,12 @@ date:   2023-11-27 14:02:00 +0900
 categories:   Android
 ---
 
+<br>
+
+[프로젝트 README로 보기 (추천)]
+
+[프로젝트 README로 보기 (추천)]: https://github.com/gdsc-konkuk/2023-gdsc-android-study-yonghaJu
+
 ## 서론
 
 GDSC Konkuk 안드로이드 스터디 5주차 과제는 자율 과제이다.
