@@ -45,7 +45,7 @@ __current__ 라는 객체는 없지만 "__CompositionLocal__ 클래스를 상속
 
 <br>
 
-```kotliln
+```kotlin
 // CompositionLocal.kt
 
 @Stable // Stable 어노테이션에 대해서는 나중에 다룸.
