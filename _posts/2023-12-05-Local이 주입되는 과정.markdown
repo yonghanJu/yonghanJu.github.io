@@ -1,0 +1,416 @@
+---
+layout: post
+title:  Deep Dive - CompositionLocal(LocalViewModelStoreOwner 주입 과정)
+date:   2023-12-05 18:22:00 +0900
+categories:   Android
+---
+
+<br>
+
+## CompositionLocal이란?
+
+Compose를 활용해 안드로이드 개발을 진행하다보면 context를 포함에 안드로이드 플랫폼 의존성이 있는 객체들을 사용할 때 __LocalContext.current__ 를 사용했던 경험이 있을 것이다.
+
+이런 객체들을 CompositionLocal 객체라고 하고 안드로이드에서는 다음과 같이 엄청나게 많은 CompositionLocal들을 제공해준다.
+
+<br>
+
+<img width="566" alt="image" src="https://github.com/yonghanJu/yonghanJu/assets/65655825/67808c09-1377-4c59-9acd-b985f2bd2fc8">
+
+<br>
+
+컴포지션 트리를 타고 상위 컴포저블함수부터 하위 함수까지 데이터를 전달하기 위해서는 각 함수에 파라미터로 객체를 넘겨주어야 한다.
+
+이런 과정은 매우 복잡하고 코드가 길어지기 때문에 이것을 쉽게 해주는 것이 __CompositionLocal__ 이라고 할 수 있다.
+
+> Compose passes data through the composition tree explicitly through means of parameters to composable functions. This is often times the simplest and best way to have data flow through the tree.
+
+<br>
+
+---
+
+## Local 객체들의 타입은 무엇인가? (feat. __ProvidableCompositionLocal__)
+
+위 사진에서 보았듯 해당 객체들은 __ProvidableCompositionLocal__ 타입으로 구현되어있다. 내부 구현을 보면서 요약한 결과는 아래와 같다.
+
+- __CompositionLocal__ 클래스를 상속한 추상클래스이다.
+- __defaultFactory: () -> T__ 를 생성자로 받는다.
+- __infix fun provides(value: T)__ 함수를 갖고 __ProvidedValue(this, value, true)__ 를 반환해준다.
+
+<br>
+
+우리가 사용하는 __ProvidableCompositionLocal__ 객체를 요약하자면 위 3개가 있다.
+
+__current__ 라는 객체는 없지만 "__CompositionLocal__ 클래스를 상속한 추상클래스이다"라는 내용을 통해 __current__ 객체는 __CompositionLocal__ 에 있을 것이라고 추측할 수 있다.
+
+<br>
+
+```kotliln
+// CompositionLocal.kt
+
+@Stable // Stable 어노테이션에 대해서는 나중에 다룸.
+abstract class ProvidableCompositionLocal<T> internal constructor(defaultFactory: () -> T) :
+    CompositionLocal<T> (defaultFactory) {
+
+    infix fun provides(value: T) = ProvidedValue(this, value, true)
+
+    infix fun providesDefault(value: T) = ProvidedValue(this, value, false)
+}
+```
+
+결국 로컬 객체는 __CompositionLocal__ 를 상속한 객체이니 __CompositionLocal__ 에 대해 더 살펴보자.
+
+<br>
+<br>
+
+### __CompositionLocal__ 의 역할
+
+
+__CompositionLocal__ 내부 구현과 요약은 아래와 같다.
+
+- __LazyValueHolder(defaultFactory)__ 벨류 홀더를 갖는다.
+- __updatedStateOf__ 추상함수를 갖는다.
+- __current__ 를 갖는다.
+
+```kotlin
+// CompositionLocal.kt
+
+@Stable
+sealed class CompositionLocal<T> constructor(defaultFactory: () -> T) {
+    
+    internal val defaultValueHolder = LazyValueHolder(defaultFactory)
+
+    internal abstract fun updatedStateOf(value: T, previous: State<T>?): State<T>
+    
+    inline val current: T
+        @ReadOnlyComposable
+        @Composable
+        get() = currentComposer.consume(this)
+}
+```
+
+<br>
+
+지금까지 요약 내용들을의 세부 구현을 살펴보자.
+
+1. LazyValueHolder: State<T>
+
+__State__ 타입이며 __CompositionLocal__ 가 생성되는 순간 생성자로 넘겨받은 __defaultFactory: () -> T__ 를 사용해 __State__ 객체를 지연 생성하는 역할을 함.
+
+```kotlin
+internal class LazyValueHolder<T>(valueProducer: () -> T) : State<T> {
+    private val current by lazy(valueProducer)
+    override val value: T get() = current
+}
+```
+
+<br>
+
+2. updatedStateOf(value: T, previous: State<T>?): State<T>
+
+__State__ 의 벨류를 바꾸는 역할을 하며 CompositionLocal를 상속하는 객체에게 구현을 맡긴다.
+value가 거의 변하지 않는 경우 __StaticProvidableCompositionLocal__ 를 상속하고 자주 변경되는 경우 __DynamicProvidableCompositionLocal__ 를 상속한다.
+
+- StaticProvidableCompositionLocal 방법: 완전히 새로운 StaticValueHolder를 전달함.
+
+```kotlin
+internal class StaticProvidableCompositionLocal<T>(defaultFactory: () -> T) :
+    ProvidableCompositionLocal<T>(defaultFactory) {
+    override fun updatedStateOf(value: T, previous: State<T>?): State<T> =
+        if (previous != null && previous.value == value) previous
+        else StaticValueHolder(value)
+}
+```
+
+<br>
+- DynamicProvidableCompositionLocal 방법: MutableState 의 객체를 변경해줌, 앖는 경우는 SnapshotMutationPolicy 와 함께 MutableState 객체 생성(State의 트렌젝션을 담당)
+
+```kotlin
+internal class DynamicProvidableCompositionLocal<T> constructor(
+    private val policy: SnapshotMutationPolicy<T>,
+    defaultFactory: () -> T
+) : ProvidableCompositionLocal<T>(defaultFactory) {
+
+    override fun updatedStateOf(value: T, previous: State<T>?): State<T> =
+        if (previous != null && previous is MutableState<T>) {
+            previous.value = value
+            previous
+        } else {
+            mutableStateOf(value, policy)
+        }
+}
+```
+
+<br>
+
+3. current: T
+
+__currentComposer.consume(this)__ 를 반환하며 해당 함수를 찾아보면 아래와 같다.
+
+__this__ 의 형태로 넘겨주는 __CompositionLocal__ 를 key로 사용해 value를 반환한다. 해당 함수는 __Composer__ 의 함수로 직접적인 호출을 하지 말라고 나와있다.
+
+@InternalComposeApi 어노테이션이 붙어있고 ComposeComplier plugin에 의해 구현체 코드가 생성된다.
+
+또한 __Composer__ 는 컴포지션 트리를 만들거나 데이터를 remember(remember { } 함수는 Composer의 cache 확장함수를 호출) 하는 등 실제 컴포즈의 동작이 정의되어있는 인터페이스이다.
+
+```kotlin
+    /**
+     * A Compose internal function. DO NOT call directly.
+     *
+     * Return the [CompositionLocal] value associated with [key]. This is the primitive function
+     * used to implement [CompositionLocal.current].
+     *
+     * @param key the [CompositionLocal] value to be retrieved.
+     */
+    @InternalComposeApi
+    fun <T> consume(key: CompositionLocal<T>): T
+```
+
+<br>
+<br>
+
+### 다시 돌아가서...
+
+LocalXXX 객체는 __ProvidableCompositionLocal__ 타입을 갖는데 이는 __LocalComposition__ 타입을 상속한 클래스 이면서 __provide__ 함수를 구현한 객체이다.
+
+__LocalComposition__ 객체는 파악이 끝났으니
+
+```infix fun provides(value: T) = ProvidedValue(this, value, true)``` 
+
+의 역할과 구현, 사용법만 확인해보자.
+
+<br>
+
+- __ProvidedValue__ 
+
+provides는 CompositionLocal과 실제 value를 갖는 데이터 홀더 클래스 __ProvidedValue__ 를 만드는 역할을 한다.
+
+```kotlin
+/**
+ * An instance to hold a value provided by [CompositionLocalProvider] and is created by the
+ * [ProvidableCompositionLocal.provides] infixed operator. If [canOverride] is `false`, the
+ * provided value will not overwrite a potentially already existing value in the scope.
+ */
+class ProvidedValue<T> internal constructor(
+    val compositionLocal: CompositionLocal<T>,
+    val value: T,
+    val canOverride: Boolean
+)
+```
+
+<br>
+
+### LocalXXX 객체 만드는 방법
+
+Compose에서 __ViewModelStoreOwner__ 를 사용하기 위해 만든 __LocalViewModelStoreOwner__ 를 만든 코드를 살펴보자.
+
+1. 로컬 객체 생성 
+
+__compositionLocalOf__ 함수를 사용해 __LocalViewModelStoreOwner__ 객체를 만든다.
+
+```kotlin
+val LocalViewModelStoreOwner = compositionLocalOf<ViewModelStoreOwner?> { null }
+```
+
+<br>
+
+__compositionLocalOf__ 은 위에서 보았던 __DynamicProvidableCompositionLocal__ 객체를 만들어 반환하는 것으로 구현되어있다.
+
+마찬가지로 __staticCompositionLocalOf__ 를 사용하면 거의 변동이 없는 __StaticProvidableCompositionLocal__ 를 반환한다.
+
+```kotlin
+fun <T> compositionLocalOf(
+    policy: SnapshotMutationPolicy<T> =
+        structuralEqualityPolicy(),
+    defaultFactory: () -> T
+): ProvidableCompositionLocal<T> = DynamicProvidableCompositionLocal(policy, defaultFactory)```
+```
+
+<br>
+
+2. current 초기화
+
+currnet 가 있는 경우에는 바로 __LocalViewModelStoreOwner.current__ 를 반환해주고 없는 경우에는 __LocalView.current.findViewTreeViewModelStoreOwner()__ 를 호출해 뷰모델스토어를 찾아 반환한다.
+
+__findViewTreeViewModelStoreOwner()__ 함수는 __ViewModelStoreOwner__ 를 찾을 때까지 부모 뷰를 따라 올라가서 viewmodelStoreOwner를 찾는 동작을 한다.
+
+즉, 컴포즈에서는 가장 먼저 찾아지는 Activity: ViewModelStoreOwner 를 찾는다.
+
+이때 모든 컴포즈가 ViewModelStoreOwner로 Activity를 갖는 것은 아니며 __NavBackStackEntry__ 가 ViewModelStoreOwner를 구현하기 때문에 __Navhost.composable__ 안의 컴포저블은 __NavBackStackEntry__ 를 current로 갖게된다.
+
+구현코드는 아래와 같다.
+
+```kotlin
+@JvmName("get")
+fun View.findViewTreeViewModelStoreOwner(): ViewModelStoreOwner? {
+    return generateSequence(this) { view ->
+        view.parent as? View
+    }.mapNotNull { view ->
+        view.getTag(R.id.view_tree_view_model_store_owner) as? ViewModelStoreOwner
+    }.firstOrNull()
+}
+```
+
+<br>
+
+3. provides 함수 생성 
+
+ProvidableCompositionLocal의 provides를 활용해 ProvidedValue<ViewModelStoreOwner?> 를 만들어주는 함수를 구현.
+
+__LocalViewModelStoreOwner__ 의 최종 구현 코드는 아래와 같다.
+
+```kotlin
+public object LocalViewModelStoreOwner {
+    private val LocalViewModelStoreOwner = // 1. 객체 생성
+        compositionLocalOf<ViewModelStoreOwner?> { null }
+
+    /**
+     * Returns current composition local value for the owner or `null` if one has not
+     * been provided nor is one available via [findViewTreeViewModelStoreOwner] on the
+     * current [LocalView].
+     */
+    public val current: ViewModelStoreOwner? // 2. current 반환
+        @Composable
+        get() = LocalViewModelStoreOwner.current
+            ?: LocalView.current.findViewTreeViewModelStoreOwner()
+
+    /**
+     * Associates a [LocalViewModelStoreOwner] key to a value in a call to
+     * [CompositionLocalProvider].
+     */
+    public infix fun provides(viewModelStoreOwner: ViewModelStoreOwner): // 3. ProvidedValue 생성
+            ProvidedValue<ViewModelStoreOwner?> {
+        return LocalViewModelStoreOwner.provides(viewModelStoreOwner)
+    }
+}
+```
+
+<br>
+<br>
+
+### LocalXXX 객체가 주입되는 과정
+
+CompositionLocal 객체를 주입하는 방법은 __CompositionLocalProvider__ 함수를 사용하면 된다. 
+
+마찬가지로 __LocalViewModelStoreOwner__ 코드를 예제로 살펴보자.
+
+NavHost 에서 화면을 보여줄 때 __LocalOwnersProvider__ 함수를 호출한다.
+
+```kotlin
+// NavHost.kt
+// lastEntry는 현재 보여질 화면 NavBackStackEntry 
+lastEntry.LocalOwnersProvider(saveableStateHolder) {
+    (lastEntry.destination as ComposeNavigator.Destination).content(lastEntry)
+}
+```
+
+<br>
+
+- __LocalOwnersProvider__ : NavHost에서 __Owner__ 형태의 객체들을 주입하기 위해 생성한 함수
+
+내부적으로 __CompositionLocalProvider__ 를 호출하는데 이때 __provides__ 함수가 사용된다.
+
+```kotlin
+@Composable
+public fun NavBackStackEntry.LocalOwnersProvider(
+    saveableStateHolder: SaveableStateHolder,
+    content: @Composable () -> Unit
+) {
+    CompositionLocalProvider(
+        LocalViewModelStoreOwner provides this,
+        LocalLifecycleOwner provides this,
+        LocalSavedStateRegistryOwner provides this
+    ) {
+        saveableStateHolder.SaveableStateProvider(content)
+    }
+}
+```
+
+<br>
+
+- CompositionLocalProvider
+
+이전에 보았던 __composer.consume()__ 함수와 마찬가지로 컴포저를 사용해 구현되어있다.
+
+__currentComposer.startProviders(values: ProvidedValue<*>)__ 함수를 통해 __ProvidedValue__ 객체를 로컬 컴포지션과 연결하고 매개변수로 받은 __content__ 를 실행한다.
+
+주석을 보면 이때 __content__ 에서 실행되는 모든 컴포저블 함수들은 주입 받은 __ProvidedValue__ 의 value에 접근할 수 있는 것이다.
+
+```kotlin
+/**
+ * [CompositionLocalProvider] binds values to [ProvidableCompositionLocal] keys. Reading the
+ * [CompositionLocal] using [CompositionLocal.current] will return the value provided in
+ * [CompositionLocalProvider]'s [values] parameter for all composable functions called directly
+ * or indirectly in the [content] lambda.
+ */
+@Composable
+@OptIn(InternalComposeApi::class)
+fun CompositionLocalProvider(vararg values: ProvidedValue<*>, content: @Composable () -> Unit) {
+    currentComposer.startProviders(values)
+    content()
+    currentComposer.endProviders()
+}
+```
+
+<br>
+<br>
+
+
+### 직접 만들어보기 : Custom LocalXXXX
+
+지금까지 살펴보았듯 CompositionLocal 이라는 객체는 엄청 복잡한 역할을 하는 것이 아니라, 여러 단계에 걸쳐 파라미터로 넘겨 받아야 할 객체를 모든 하위 컴포저블에게 넘겨주는 역할을 갖는 것을 확인했다.
+
+따라서 개발 과정에서 하위 모든 컴포저블에서 사용할 수 있는 객체를 만들었을 경우 이를 파라미터로 직접 넘겨주기보단 CompositionLocal 을 만들어 넘겨줄 수 있다.
+
+<br>
+
+```kotlin
+// 클래스 선언
+data class Apple(val name: String)
+
+// CompositionLocal 객체 생성
+val LocalApple: ProvidableCompositionLocal<Apple> =
+    staticCompositionLocalOf { error("Apple was not initialized!") }
+
+// 컴포저블 함수 선언
+@Composable
+fun SampleComposable() {
+    Text(LocalApple.current.name)
+}
+
+// 테스트
+@Preview
+@Composable
+fun SampleComposablePreview() {
+    val apple = Apple("appleName")
+    WalkieTheme {
+        CompositionLocalProvider(
+            LocalApple provides apple,
+        ) {
+            SampleComposable()
+        }
+    }
+}
+```
+
+- 실행 화면
+
+<img width="878" alt="image" src="https://github.com/yonghanJu/yonghanJu/assets/65655825/18bca441-e898-42ad-8c91-dea9a9409716">
+
+<br><br>
+
+## 결론
+
+이번 DeepDive의 시작은 "Compose에서 ViewModel의 생명주기는 어디에 연결될까?" 라는 질문에서 시작됐다.
+
+LocalViewModelStoreOwner를 사용해 NavBackStackEntry에 맞춰 생명주기를 찾는 과정, 더 나아가 CompositionLocal 을 만드는 과정과 내부 구현 사용 예시를 찾아보면서 어떻게 다른 LocalXXX 객체들을 사용할 수 있는지에 관한 인사이트를 얻을 수 있었다.
+
+
+
+__아쉬운 점__ 이 있다면 Composer 의 내부 구현은 모두 ComposeComplier 에 의해 구현되어 볼 수 없었기에 추상화된 컴포즈 구성 단계에 의지할 수 밖에 없었고 updatedStateOf 내부 구현 과정에서 SnapshotMutationPolicy에 대해 다룰 수 없었다는 점이다.
+
+컴포즈가 실행될 때 순서와 상관없이 병렬적으로 실행되게 되며 여러 컴포저블 함수에서 동시에 하나의 State에 접근할 수 있다. 
+
+따라서 State에 대한 트랜젝션이 필요한데 SnapshotMutationPolicy<T>는 mutableStateOf 결과 통지와 병합 방법 제어를  위한 equivalent와 merge를 갖고 있는 인터페이스라는 사실을 알게 되었습니다.
+
+아직 State에 대한 트랜젝션 부분에 대해서는 deep dive를 하지 못했지만 다음 포스팅에서 다룰 수 있도록 열심히 공부해야겠다.
