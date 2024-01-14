@@ -1,0 +1,139 @@
+---
+layout: post
+title:  Swallow Dive - 함수 컬러링이란?(feat. inline)
+date:   2024-01-14 18:00:00 +0900
+categories:   Android
+---
+
+<br>
+
+## 특정 목적을 위한 Kotlin 함수들
+
+함수의 컬러링이란 단어는 Google Dart 팀의 Bob Nystrom 씨가 2015년에 블로그에 포스팅에서 소개된 내용이다.
+
+우선 Kotlin 표준 함수는 일반적인 프로그래밍에서의 함수의 역할과 똑같이 스택 메모리에 쌓이며 새로운 함수를 실행 시 다시 스택이 쌓이고 로직을 수행하는 역할을 한다.
+
+하지만 이런 일반적인 함수 이외의 특수한 목적성을 띄고 해당 목적을 수행하기 위해 특화된 동작을 수행하는 함수가 있을 수 있다.
+
+Kotlin에서의 예를 들어보자면 suspend 키워드가 붙은 함수는 중단함수로써 개발자로 하여금 범용적이며 관용적인 비동기 프로그래밍을 가능하도록 한다.
+
+suspend 키워드가 붙은 함수는 컴파일 과정에서 중단과 제개를 재귀적으로 추상화한 Continuation 객체를 사용해 중단함수의 역할을 하게된다.
+
+일반적인 로직 수행을 뛰어넘어 쓰레드를 블락하지 않고 중단, 제개가 가능한 코드블럭을 만들어 비동기 프로그래밍을 가능케 한다.
+
+<br>
+
+비슷한 사례로는 @Composable 어노테이션이 붙은 컴포저블 함수이다.
+
+컴포저블 함수는 일반적인 Kotlin 표준 함수처럼 로직을 수행한다 라는 개념과는 전혀 다르게 Composiation Tree 의 노드를 만드는 역할을 한다.
+
+로직을 수행하는 것이 아니라 입력받은 매개변수를 토대로 UI Tree의 노드를 구성하며 데이터의 변화에 맞춰 최신상태를 유지하는 역할을 한다.
+
+<br>
+
+### 함수 컬러링이란?
+
+
+위 __suspend__ 함수와 __Composable__ 함수는 모두 표준 Kotlin 함수와 다르게 특정 역할을 수행하기 위해 사용된다.
+
+그리고 두 함수는 공통점이 있는데 바로 표준 함수에서 호출될 수 없다는 것이다.
+
+__suspend__ 함수는 __suspend__ 함수 안에서만 호출될 수 있고 __@Composable__ 함수는 __@Composable__ 안에서만 호출될 수 있다.
+
+이것이 바로 __함수의 컬러링__ 이라고 할 수 있다.
+
+<br>
+
+함수는 기본적으로 스택 메모리에 적재되는데 suspend 또는 @Composable 함수는 표준 함수와 다르게 마치 __"채색된"__ 함수처럼 같은 종류의 색상을 가진 스택(컨텍스트)이 아니라면 호출이 불가하다.
+
+따라서 색상이 다른 함수들은 통합되기가 어려운데 이를 가능케 하는 __통합 지점이 분명히 필요하다.__
+
+예를 들어 __suspend__ 함수와 표준 함수를 통합하는 통합지점은 __CoroutineScope의 확장함수__ 를 통해서 실행되며 __@Composable__ 함수와 일반 함수의 통합 지점은 __Composition.setContent__ 를 통해 실현된다.
+
+<br>
+
+### 채색된 함수가 표준 함수에서 사용하되려면??
+
+아래 코드 블럭을 보자
+
+```kotlin
+@Composable
+fun ColoredFun(list: ImmutableList<Apple>) {
+    Column {
+        list.forEach {
+            Text(it.name)
+        }
+    }
+}
+```
+
+<br>
+
+우리는 방금전까지 __@Composable__ 함수가 채색 되어있어 같은 컨텍스트를 공유하는 함수에서만 호출될 수 있다고 배웠다.
+
+하지만 ```Text(it.name)``` 함수는 어떻게 같은 __@Composable__ 함수가 아닌 __forEach__ 함수에서 실행될 수 있는걸까?
+
+<br>
+
+### inline 키워드의 역할, "함수 컬러링" 문제 우회
+
+우선 __forEach__ 함수의 구현부를 찾아보자.
+
+```kotlin
+@kotlin.internal.HidesMembers
+public inline fun <T> Iterable<T>.forEach(action: (T) -> Unit): Unit {
+    for (element in this) action(element)
+}
+```
+
+<br>
+
+forEach 함수의 매개변수로 받는 람다는 __Composable__ 함다가 아니다. 따라서 해당 람다 안에서 __@Composable Text()__ 함수를 실행하기 위해서는 매개변수로 __@Composable action: (T) -> Unit__ 를 받았어야 할 것이다.
+
+하지만 어떻게 일반 람다 안에서 @Composable 함수를 실행시킬 수 있었을까?
+
+<br>
+
+정답은 __inline__ 키워드에 있다.
+
+해당키워드가 붙은 함수가 어떻게 컴파일되는지 직접 확인해보자.
+
+```kotlin
+// Kotlin Class
+class InlineTest {
+    fun main() {
+        println(inlineTest { 1 + 3 })
+    }
+
+    private inline fun inlineTest(action: () -> Int): Int {
+        return action()
+    }
+}
+
+// Decomplied.java
+public final class InlineTest {
+   public final void main() {
+      int $i$f$inlineTest = false;
+      int var3 = false;
+      byte var1 = 4; // 1 + 3 로직이 직접 실행, 함수 호출 X
+      System.out.println(var1);
+   }
+
+   private final int inlineTest(Function0 action) {
+      int $i$f$inlineTest = 0;
+      return ((Number)action.invoke()).intValue();
+   }
+}
+
+```
+
+<br>
+
+이렇게 컴파일 시 inline 함수를 호출하지 않고 함수 내부 코드를 복사 붙여넣기 한 효과를 볼 수 있다.
+
+이때 추가적인 함수를 호출하고 스택을 만들지 않기 때문에 성능적인 측면에서도 유리할 수 있지만 진짜 강점은 "함수 컬리링" 문제를 우회할 수 있다는 점이다.
+
+지금까지는 별 생각 없이 __forEach__ 함수를 포함한 다양한 inline 함수 안에서 __suspend__ 함수나 __@Composable__ 함수를 사용했었다면 어떻게 같은 색상이 아닌 함수안에서 호출이 가능했는지 다시한번 생각해볼 수 있을 것이다.
+
+<br>
+
