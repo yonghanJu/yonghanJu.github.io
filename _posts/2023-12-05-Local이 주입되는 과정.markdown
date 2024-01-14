@@ -93,7 +93,7 @@ sealed class CompositionLocal<T> constructor(defaultFactory: () -> T) {
 
 지금까지 요약 내용들을의 세부 구현을 살펴보자.
 
-1. LazyValueHolder: State<T>
+#### 1. LazyValueHolder: State<T>
 
 __State__ 타입이며 __CompositionLocal__ 가 생성되는 순간 생성자로 넘겨받은 __defaultFactory: () -> T__ 를 사용해 __State__ 객체를 지연 생성하는 역할을 함.
 
@@ -106,7 +106,7 @@ internal class LazyValueHolder<T>(valueProducer: () -> T) : State<T> {
 
 <br>
 
-2. updatedStateOf(value: T, previous: State<T>?): State<T>
+#### 2. updatedStateOf(value: T, previous: State<T>?): State<T>
 
 __State__ 의 벨류를 바꾸는 역할을 하며 CompositionLocal를 상속하는 객체에게 구현을 맡긴다.
 value가 거의 변하지 않는 경우 __StaticProvidableCompositionLocal__ 를 상속하고 자주 변경되는 경우 __DynamicProvidableCompositionLocal__ 를 상속한다.
@@ -143,7 +143,7 @@ internal class DynamicProvidableCompositionLocal<T> constructor(
 
 <br>
 
-3. current: T
+#### 3. current: T
 
 __currentComposer.consume(this)__ 를 반환하며 해당 함수를 찾아보면 아래와 같다.
 
@@ -204,7 +204,7 @@ class ProvidedValue<T> internal constructor(
 
 Compose에서 __ViewModelStoreOwner__ 를 사용하기 위해 만든 __LocalViewModelStoreOwner__ 를 만든 코드를 살펴보자.
 
-1. 로컬 객체 생성 
+#### 1. 로컬 객체 생성 
 
 __compositionLocalOf__ 함수를 사용해 __LocalViewModelStoreOwner__ 객체를 만든다.
 
@@ -228,7 +228,7 @@ fun <T> compositionLocalOf(
 
 <br>
 
-2. current 초기화
+#### 2. current 초기화
 
 currnet 가 있는 경우에는 바로 __LocalViewModelStoreOwner.current__ 를 반환해주고 없는 경우에는 __LocalView.current.findViewTreeViewModelStoreOwner()__ 를 호출해 뷰모델스토어를 찾아 반환한다.
 
@@ -253,7 +253,7 @@ fun View.findViewTreeViewModelStoreOwner(): ViewModelStoreOwner? {
 
 <br>
 
-3. provides 함수 생성 
+#### 3. provides 함수 생성 
 
 ProvidableCompositionLocal의 provides를 활용해 ProvidedValue<ViewModelStoreOwner?> 를 만들어주는 함수를 구현.
 
